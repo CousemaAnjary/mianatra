@@ -180,3 +180,12 @@ export const courseService = {
   renameCourse,
   updateCourse,
 };
+
+export {
+  buildRealCourseResults,
+  emptyCourseResultCounters,
+  isExplicitDemoId,
+  loadRealCourseResults,
+  resolveExerciseSessionTarget,
+} from "./course-route-state.service";
+export type { CourseRecentActivity, CourseResultCounters, CourseRouteResults, RealCourseResultsState } from "./course-route-state.service";

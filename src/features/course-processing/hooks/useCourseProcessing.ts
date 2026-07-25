@@ -26,11 +26,13 @@ const idleSnapshot: CourseProcessingSnapshot = {
 export function useCourseProcessing(courseId: string | undefined) {
   const [snapshot, setSnapshot] = useState<CourseProcessingSnapshot>(idleSnapshot);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [hasLoadedDetail, setHasLoadedDetail] = useState(false);
   const [controller, setController] = useState<ReturnType<typeof createCourseProcessingController> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setController(null);
+    setHasLoadedDetail(false);
     if (!courseId) {
       setSnapshot(idleSnapshot);
       return;
@@ -62,6 +64,7 @@ export function useCourseProcessing(courseId: string | undefined) {
       const detail = await controller.refreshDetail();
       setSnapshot((current) => ({ ...current, detail }));
     } finally {
+      setHasLoadedDetail(true);
       setIsLoadingDetail(false);
     }
   }, [controller]);
@@ -72,6 +75,7 @@ export function useCourseProcessing(courseId: string | undefined) {
 
   return {
     ...snapshot,
+    hasLoadedDetail,
     isLoadingDetail,
     startProcessing: useCallback(() => controller?.startProcessing(), [controller]),
     confirmAndContinue: useCallback(() => controller?.confirmAndContinue(), [controller]),

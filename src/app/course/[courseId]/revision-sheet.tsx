@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import { CourseTopBar } from "@/src/features/courses/components";
-import { getCourseDetail } from "@/src/features/courses";
+import { getCourseDetail, isExplicitDemoId } from "@/src/features/courses";
 import { RevisionSection } from "@/src/features/revision/components";
 import { loadLatestRevisionSheet, type RevisionSheetViewState } from "@/src/features/revision-sheet/services/revision-sheet-view.service";
 import { startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
@@ -17,16 +17,25 @@ export default function RevisionSheetScreen() {
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
   const [realCourseExists, setRealCourseExists] = useState(false);
+  const [realCourseMissing, setRealCourseMissing] = useState(false);
   const [realSheet, setRealSheet] = useState<RevisionSheetViewState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
-  const course = demoCourses.find((demoItem) => demoItem.id === resolvedCourseId);
-  const sheet = demoRevisionSheet.courseId === resolvedCourseId ? demoRevisionSheet : undefined;
+  const isDemoCourse = isExplicitDemoId(resolvedCourseId, demoCourses.map((demoItem) => demoItem.id));
+  const course = isDemoCourse ? demoCourses.find((demoItem) => demoItem.id === resolvedCourseId) : undefined;
+  const sheet = isDemoCourse && demoRevisionSheet.courseId === resolvedCourseId ? demoRevisionSheet : undefined;
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       if (!resolvedCourseId) {
+        setIsLoading(false);
+        return;
+      }
+      if (isDemoCourse) {
+        setRealCourseExists(false);
+        setRealCourseMissing(false);
+        setRealSheet(null);
         setIsLoading(false);
         return;
       }
@@ -36,11 +45,13 @@ export default function RevisionSheetScreen() {
         const loadedSheet = await loadLatestRevisionSheet(resolvedCourseId);
         if (!cancelled) {
           setRealCourseExists(true);
+          setRealCourseMissing(false);
           setRealSheet(loadedSheet);
         }
       } catch {
         if (!cancelled) {
           setRealCourseExists(false);
+          setRealCourseMissing(true);
           setRealSheet(null);
         }
       } finally {
@@ -53,11 +64,15 @@ export default function RevisionSheetScreen() {
     return () => {
       cancelled = true;
     };
-  }, [resolvedCourseId]);
+  }, [isDemoCourse, resolvedCourseId]);
 
   async function startExercises() {
-    if (!resolvedCourseId || !realCourseExists) {
+    if (isDemoCourse) {
       router.push({ pathname: "/session/[sessionId]", params: { sessionId: demoSession.id } });
+      return;
+    }
+    if (!resolvedCourseId || !realCourseExists) {
+      setSessionError("Aucun exercice réel n'est disponible pour ce cours.");
       return;
     }
     setSessionError(null);
@@ -93,6 +108,19 @@ export default function RevisionSheetScreen() {
               : "Génère une fiche depuis le détail du cours."}
           </AppText>
           <AppButton title="Retour au cours" iconName="arrow-left" onPress={() => router.back()} />
+        </AppCard>
+      </AppScreen>
+    );
+  }
+
+  if (realCourseMissing) {
+    return (
+      <AppScreen contentClassName="gap-4 pb-8">
+        <CourseTopBar title="Ma fiche" />
+        <AppCard className="gap-3">
+          <AppText variant="subtitle">Cours introuvable</AppText>
+          <AppText tone="secondary">Aucun cours SQLite ne correspond à cet identifiant.</AppText>
+          <AppButton title="Retour aux cours" iconName="arrow-left" onPress={() => router.replace("/courses")} />
         </AppCard>
       </AppScreen>
     );

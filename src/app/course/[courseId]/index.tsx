@@ -15,6 +15,7 @@ import {
   CourseSummary,
   CourseTopBar,
 } from "@/src/features/courses/components";
+import { buildRealCourseResults, isExplicitDemoId, resolveExerciseSessionTarget } from "@/src/features/courses";
 import { useCourseProcessing } from "@/src/features/course-processing";
 import { countRealCourseExercises, startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
@@ -33,18 +34,20 @@ type CoursePrimaryAction = {
 export default function CourseDetailScreen() {
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
-  const processing = useCourseProcessing(resolvedCourseId);
+  const isDemoCourse = isExplicitDemoId(resolvedCourseId, demoCourses.map((demoItem) => demoItem.id));
+  const demoCourse = isDemoCourse ? demoCourses.find((demoItem) => demoItem.id === resolvedCourseId) : undefined;
+  const processing = useCourseProcessing(isDemoCourse ? undefined : resolvedCourseId);
   const [realExerciseCount, setRealExerciseCount] = useState(0);
   const [sessionError, setSessionError] = useState<string | null>(null);
-  const demoCourse = demoCourses.find((demoItem) => demoItem.id === resolvedCourseId);
-  const realDetail = processing.detail;
+  const realDetail = isDemoCourse ? null : processing.detail;
+  const realResults = realDetail ? buildRealCourseResults(realDetail) : null;
   const course = realDetail
     ? {
         id: realDetail.course.id,
         title: realDetail.course.title,
         subject: realDetail.subject?.name ?? "Cours",
         pageCount: realDetail.pages.length,
-        progress: 0,
+        progress: realResults?.progress ?? 0,
         lastRevision: realDetail.course.lastReviewedAt ? "récente" : "jamais",
         summary: realDetail.course.summary ? [realDetail.course.summary] : [],
       }
@@ -114,6 +117,45 @@ export default function CourseDetailScreen() {
     };
   }, [demoCourse?.id, processing, realDetail, realExerciseCount]);
 
+  async function openExercises() {
+    setSessionError(null);
+    if (!realDetail) {
+      const targetSessionId = resolveExerciseSessionTarget({
+        isDemoCourse,
+        demoSessionId: demoSession.id,
+        realSessionId: null,
+      });
+      if (targetSessionId) {
+        router.push({ pathname: "/session/[sessionId]", params: { sessionId: targetSessionId } });
+      }
+      return;
+    }
+
+    const session = await startRealCourseSession(realDetail.course.id);
+    const targetSessionId = resolveExerciseSessionTarget({
+      isDemoCourse: false,
+      demoSessionId: demoSession.id,
+      realSessionId: session?.id ?? null,
+    });
+    if (!targetSessionId) {
+      setSessionError("Aucun exercice réel n'est disponible pour ce cours.");
+      return;
+    }
+    router.push({ pathname: "/session/[sessionId]", params: { sessionId: targetSessionId } });
+  }
+
+  if (!isDemoCourse && !realDetail && !processing.hasLoadedDetail) {
+    return (
+      <AppScreen contentClassName="gap-5 pb-8">
+        <CourseTopBar title="Chargement" />
+        <AppCard className="gap-4">
+          <AppText variant="subtitle">Chargement du cours</AppText>
+          <AppText tone="secondary">Lecture des données SQLite...</AppText>
+        </AppCard>
+      </AppScreen>
+    );
+  }
+
   if (!course) {
     return (
       <AppScreen contentClassName="gap-5 pb-8">
@@ -121,7 +163,7 @@ export default function CourseDetailScreen() {
         <AppCard className="gap-4">
           <AppText variant="subtitle">Cours introuvable</AppText>
           <AppText tone="secondary">
-            {"Ce cours de démonstration n'existe pas ou n'est pas disponible."}
+            {"Ce cours n'existe pas ou n'est pas disponible."}
           </AppText>
           <AppButton
             title="Retour à Mes cours"
@@ -164,9 +206,9 @@ export default function CourseDetailScreen() {
 
       <CourseProgressCard
         progress={course.progress}
-        mastered={demoCourseResults.counters.mastered}
-        progressing={demoCourseResults.counters.progressing}
-        needsWork={demoCourseResults.counters.needsWork}
+        mastered={realResults?.counters.mastered ?? demoCourseResults.counters.mastered}
+        progressing={realResults?.counters.progressing ?? demoCourseResults.counters.progressing}
+        needsWork={realResults?.counters.needsWork ?? demoCourseResults.counters.needsWork}
       />
 
       <CourseActionTabs
@@ -185,11 +227,8 @@ export default function CourseDetailScreen() {
             id: "exercises",
             label: "Mes exercices",
             iconName: "chart-line",
-            onPress: () =>
-              router.push({
-                pathname: "/session/[sessionId]",
-                params: { sessionId: demoSession.id },
-              }),
+            disabled: Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0),
+            onPress: () => void openExercises(),
           },
           {
             id: "results",
@@ -259,13 +298,13 @@ export default function CourseDetailScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Faire des exercices"
-          onPress={() =>
-            router.push({
-              pathname: "/session/[sessionId]",
-              params: { sessionId: demoSession.id },
-            })
-          }
-          className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
+          accessibilityState={{ disabled: Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0) }}
+          disabled={Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0)}
+          onPress={() => void openExercises()}
+          className={[
+            "min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80",
+            realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0 ? "opacity-45" : "",
+          ].join(" ")}
         >
           <FontAwesome5 name="pen" size={16} color={colors.textPrimary} />
           <AppText variant="label">Faire des exercices</AppText>

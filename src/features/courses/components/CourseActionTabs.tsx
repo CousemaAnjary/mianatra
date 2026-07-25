@@ -8,6 +8,7 @@ type CourseActionTab = {
   label: string;
   iconName: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
 type CourseActionTabsProps = {
@@ -22,10 +23,13 @@ export function CourseActionTabs({ tabs }: CourseActionTabsProps) {
           key={tab.id}
           accessibilityRole="button"
           accessibilityLabel={tab.label}
+          accessibilityState={{ disabled: tab.disabled ?? false }}
+          disabled={tab.disabled}
           onPress={tab.onPress}
           className={[
             "min-h-[92px] flex-1 items-center justify-center gap-2 border-r border-[#E8D9C7] p-2 active:bg-[#FAF1E2]",
             index === tabs.length - 1 ? "border-r-0" : "",
+            tab.disabled ? "opacity-45" : "",
           ].join(" ")}
         >
           <FontAwesome5 name={tab.iconName} size={22} color={colors.textPrimary} />

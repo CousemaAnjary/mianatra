@@ -1,10 +1,10 @@
 import { View } from "react-native";
 import { AppCard, AppText } from "@/src/components/shared";
-import type { DemoResultCounters } from "@/src/data/demo-data";
+import type { CourseResultCounters } from "@/src/features/courses";
 import { colors } from "@/src/theme";
 
 type CourseResultSummaryProps = {
-  counters: DemoResultCounters;
+  counters: CourseResultCounters;
 };
 
 export function CourseResultSummary({ counters }: CourseResultSummaryProps) {

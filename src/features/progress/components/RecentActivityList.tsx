@@ -1,11 +1,11 @@
 import { View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppCard, AppText } from "@/src/components/shared";
-import type { DemoRecentActivity } from "@/src/data/demo-data";
+import type { CourseRecentActivity } from "@/src/features/courses";
 import { colors } from "@/src/theme";
 
 type RecentActivityListProps = {
-  activities: DemoRecentActivity[];
+  activities: CourseRecentActivity[];
 };
 
 export function RecentActivityList({ activities }: RecentActivityListProps) {
