@@ -14,6 +14,7 @@ export type DemoGrade = "2nde" | "1ère" | "Tale";
 
 export type DemoCourse = {
   id: string;
+  subjectId?: string;
   title: string;
   subject: string;
   pageCount: number;
@@ -22,12 +23,64 @@ export type DemoCourse = {
   focus?: string;
   grade?: DemoGrade;
   iconName?: string;
+  lastRevision?: string;
+  illustration?: "student-reading";
+  summary?: string[];
 };
 
 export type DemoNotion = {
   id: string;
   label: string;
+  title?: string;
+  description?: string;
   status: "mastered" | "progressing" | "needs-work";
+};
+
+export type DemoCoursePage = {
+  id: string;
+  assetName:
+    | "sample_course_page_1"
+    | "sample_course_page_2"
+    | "sample_course_page_3"
+    | "sample_course_page_4";
+  order: number;
+  accessibilityLabel: string;
+};
+
+export type DemoRevisionSection = {
+  id: string;
+  title: string;
+  text: string;
+  image?: "function-graph";
+  formula?: string;
+  formulaDetail?: string;
+};
+
+export type DemoRevisionSheet = {
+  courseId: string;
+  title: string;
+  summaryTitle: string;
+  sections: DemoRevisionSection[];
+};
+
+export type DemoResultCounters = {
+  mastered: number;
+  progressing: number;
+  needsWork: number;
+};
+
+export type DemoRecentActivity = {
+  id: string;
+  title: string;
+  score: number;
+  iconName: string;
+};
+
+export type DemoCourseResults = {
+  courseId: string;
+  counters: DemoResultCounters;
+  progress: number;
+  recentActivities: DemoRecentActivity[];
 };
 
 export type DemoExercise = {
@@ -78,6 +131,7 @@ export const demoSubjects: DemoSubject[] = [
 
 export const demoCourse: DemoCourse = {
   id: "demo-second-degree-functions",
+  subjectId: "mathematics",
   title: "Fonctions du second degré",
   subject: "Mathématiques",
   pageCount: 4,
@@ -86,12 +140,21 @@ export const demoCourse: DemoCourse = {
   focus: "fonctions",
   grade: "2nde",
   iconName: "square-root-alt",
+  lastRevision: "hier",
+  illustration: "student-reading",
+  summary: [
+    "Représentation graphique d'une fonction du second degré",
+    "Sommet d'une parabole",
+    "Variations",
+    "Équation du second degré",
+  ],
 };
 
 export const demoCourses: DemoCourse[] = [
   demoCourse,
   {
     id: "demo-electricity",
+    subjectId: "physics-chemistry",
     title: "Circuits électriques",
     subject: "Physique-Chimie",
     pageCount: 3,
@@ -103,6 +166,7 @@ export const demoCourses: DemoCourse[] = [
   },
   {
     id: "demo-important-dates",
+    subjectId: "history-geography",
     title: "Repères historiques",
     subject: "Histoire-Géographie",
     pageCount: 2,
@@ -114,6 +178,7 @@ export const demoCourses: DemoCourse[] = [
   },
   {
     id: "demo-dissertation",
+    subjectId: "french",
     title: "Méthode de dissertation",
     subject: "Français",
     pageCount: 3,
@@ -125,6 +190,7 @@ export const demoCourses: DemoCourse[] = [
   },
   {
     id: "demo-genetics",
+    subjectId: "svt",
     title: "Génétique",
     subject: "SVT",
     pageCount: 2,
@@ -141,10 +207,108 @@ export const demoHomeCourses = demoCourses.slice(0, 3);
 export const demoGrades: DemoGrade[] = ["2nde", "1ère", "Tale"];
 
 export const demoNotions: DemoNotion[] = [
-  { id: "canonical-form", label: "Forme canonique", status: "mastered" },
-  { id: "graph-reading", label: "Lecture du graphique", status: "progressing" },
-  { id: "roots", label: "Racines et intersections", status: "needs-work" },
+  {
+    id: "graph-representation",
+    label: "Représentation graphique",
+    title: "Représentation graphique",
+    description: "La courbe d'une fonction du second degré est une parabole.",
+    status: "mastered",
+  },
+  {
+    id: "parabola-vertex",
+    label: "Sommet d'une parabole",
+    title: "Sommet d'une parabole",
+    description: "Le sommet est le point le plus haut ou le plus bas de la parabole.",
+    status: "mastered",
+  },
+  {
+    id: "variations",
+    label: "Variations",
+    title: "Variations",
+    description: "La fonction est croissante ou décroissante selon les valeurs de x.",
+    status: "progressing",
+  },
+  {
+    id: "quadratic-equation",
+    label: "Équation du second degré",
+    title: "Équation du second degré",
+    description: "Une équation du second degré peut s'écrire ax² + bx + c = 0.",
+    status: "needs-work",
+  },
 ];
+
+export const demoCoursePages: DemoCoursePage[] = [
+  {
+    id: "page-1",
+    assetName: "sample_course_page_1",
+    order: 1,
+    accessibilityLabel: "Page de cours 1",
+  },
+  {
+    id: "page-2",
+    assetName: "sample_course_page_2",
+    order: 2,
+    accessibilityLabel: "Page de cours 2",
+  },
+  {
+    id: "page-3",
+    assetName: "sample_course_page_3",
+    order: 3,
+    accessibilityLabel: "Page de cours 3",
+  },
+  {
+    id: "page-4",
+    assetName: "sample_course_page_4",
+    order: 4,
+    accessibilityLabel: "Page de cours 4",
+  },
+];
+
+export const demoRevisionSheet: DemoRevisionSheet = {
+  courseId: demoCourse.id,
+  title: demoCourse.title,
+  summaryTitle: "Résumé du chapitre",
+  sections: [
+    {
+      id: "graph-representation",
+      title: "Représentation graphique",
+      text: "La courbe d'une fonction du second degré est une parabole.",
+      image: "function-graph",
+    },
+    {
+      id: "parabola-vertex",
+      title: "Sommet d'une parabole",
+      text: "Le sommet est le point le plus haut ou le plus bas de la parabole.",
+    },
+    {
+      id: "variations",
+      title: "Variations",
+      text: "La fonction est croissante ou décroissante selon les valeurs de x.",
+    },
+    {
+      id: "quadratic-equation",
+      title: "Équation du second degré",
+      text: "",
+      formula: "ax² + bx + c = 0",
+      formulaDetail: "avec a ≠ 0",
+    },
+  ],
+};
+
+export const demoCourseResults: DemoCourseResults = {
+  courseId: demoCourse.id,
+  counters: {
+    mastered: 2,
+    progressing: 3,
+    needsWork: 2,
+  },
+  progress: 62,
+  recentActivities: [
+    { id: "graph-reading", title: "Lecture d'un graphique", score: 80, iconName: "chart-line" },
+    { id: "vertex", title: "Sommet d'une parabole", score: 60, iconName: "mountain" },
+    { id: "equation", title: "Équation du second degré", score: 40, iconName: "clipboard-list" },
+  ],
+};
 
 export const demoSession: DemoSession = {
   id: "demo-session-functions-graph",
