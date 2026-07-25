@@ -12,7 +12,7 @@ import { demoCourse, demoHomeCourses, demoProfile, demoSession, type DemoCourse 
 import { colors } from "@/src/theme";
 
 export default function HomeScreen() {
-  function openCourse(course: DemoCourse) {
+  function openCourse(course: Pick<DemoCourse, "id">) {
     router.push({
       pathname: "/course/[courseId]",
       params: { courseId: course.id },
@@ -70,7 +70,21 @@ export default function HomeScreen() {
 
       <View className="gap-3">
         {demoHomeCourses.map((course) => (
-          <CourseCard key={course.id} course={course} onPress={openCourse} />
+          <CourseCard
+            key={course.id}
+            course={{
+              id: course.id,
+              title: course.subject,
+              subject: course.subject,
+              grade: course.grade,
+              pageCount: course.chapters ?? course.pageCount,
+              progress: course.progress,
+              iconName: course.iconName,
+              color: null,
+              focusText: `À renforcer : ${course.focus}`,
+            }}
+            onPress={() => openCourse(course)}
+          />
         ))}
       </View>
 
