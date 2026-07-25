@@ -1,33 +1,95 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { OnboardingForm } from "@/src/components/core";
-import { AppButton, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
-import { demoGrades, demoProfile, type DemoGrade } from "@/src/data/demo-data";
+import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
+import {
+  createOnboardingProfileFromForm,
+  onboardingGrades,
+  shouldRedirectExistingOnboardingProfile,
+  type OnboardingProfileValidationErrors,
+} from "@/src/features/profile/services/onboarding-profile.service";
 import { colors } from "@/src/theme";
 
 export default function OnboardingScreen() {
-  const [firstName, setFirstName] = useState(demoProfile.firstName);
-  const [age, setAge] = useState(String(demoProfile.age));
-  const [selectedGrade, setSelectedGrade] = useState<DemoGrade>("2nde");
-  const [nameError, setNameError] = useState<string>();
-  const [ageError, setAgeError] = useState<string>();
+  const isSubmittingRef = useRef(false);
+  const [displayName, setDisplayName] = useState("");
+  const [age, setAge] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState<string>(onboardingGrades[0]);
+  const [series, setSeries] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [errors, setErrors] = useState<OnboardingProfileValidationErrors>({});
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
 
-  function validateAndContinue() {
-    const cleanName = firstName.trim();
-    const parsedAge = Number(age);
-    const nextNameError = cleanName.length === 0 ? "Indique un prénom ou un pseudonyme." : undefined;
-    const nextAgeError =
-      !Number.isInteger(parsedAge) || parsedAge < 12 || parsedAge > 30
-        ? "Indique un âge entre 12 et 30 ans."
-        : undefined;
+  useEffect(() => {
+    let cancelled = false;
 
-    setNameError(nextNameError);
-    setAgeError(nextAgeError);
+    shouldRedirectExistingOnboardingProfile()
+      .then((exists) => {
+        if (cancelled) {
+          return;
+        }
+        if (exists) {
+          router.replace("/(tabs)");
+          return;
+        }
+        setIsCheckingProfile(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReadError("Impossible de vérifier le profil local. Réessaie.");
+          setIsCheckingProfile(false);
+        }
+      });
 
-    if (!nextNameError && !nextAgeError) {
-      router.replace("/(tabs)");
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function validateAndContinue() {
+    if (isSubmittingRef.current) {
+      return;
     }
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    setErrors({});
+
+    try {
+      const result = await createOnboardingProfileFromForm({
+        displayName,
+        age,
+        grade: selectedGrade,
+        series,
+        schoolName,
+      });
+
+      if (!result.success) {
+        setErrors(result.errors);
+        return;
+      }
+
+      router.replace("/(tabs)");
+    } catch {
+      setErrors({ form: "Impossible de créer ton profil. Réessaie." });
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isCheckingProfile || readError) {
+    return (
+      <AppScreen contentClassName="flex-1 justify-center">
+        <AppCard className="gap-3">
+          <AppText variant="subtitle">{readError ? "Profil indisponible" : "Préparation du profil"}</AppText>
+          <AppText tone="secondary">{readError ?? "Vérification du profil local..."}</AppText>
+          {readError ? <AppButton title="Réessayer" iconName="redo" onPress={() => router.replace("/")} /> : null}
+        </AppCard>
+      </AppScreen>
+    );
   }
 
   return (
@@ -72,30 +134,35 @@ export default function OnboardingScreen() {
             />
 
             <OnboardingForm
-              firstName={firstName}
+              displayName={displayName}
               age={age}
               selectedGrade={selectedGrade}
-              grades={demoGrades}
-              nameError={nameError}
-              ageError={ageError}
-              onChangeFirstName={setFirstName}
+              grades={[...onboardingGrades]}
+              series={series}
+              schoolName={schoolName}
+              nameError={errors.displayName}
+              ageError={errors.age}
+              gradeError={errors.grade}
+              onChangeDisplayName={setDisplayName}
               onChangeAge={setAge}
               onSelectGrade={setSelectedGrade}
+              onChangeSeries={setSeries}
+              onChangeSchoolName={setSchoolName}
             />
           </View>
 
           <View className="gap-3 pt-1">
-            <View className="flex-row items-center justify-between">
-              <AppText tone="secondary">1 sur 4</AppText>
-              <AppText variant="caption" tone="secondary">
-                Profil
+            {errors.form ? (
+              <AppText accessibilityRole="alert" tone="error">
+                {errors.form}
               </AppText>
-            </View>
-            <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
+            ) : null}
           <AppButton
-            title="Suivant"
+            title={isSubmitting ? "Création du profil..." : "Créer mon profil"}
             iconName="arrow-right"
             iconPosition="right"
+            loading={isSubmitting}
+            disabled={isSubmitting}
             onPress={validateAndContinue}
             className="w-full"
             style={{
