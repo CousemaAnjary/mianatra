@@ -83,11 +83,24 @@ export type DemoCourseResults = {
   recentActivities: DemoRecentActivity[];
 };
 
+export type DemoExerciseType = "short-answer" | "multiple-choice" | "true-false";
+
 export type DemoExercise = {
   id: string;
   title: string;
   question: string;
-  isCorrect: boolean;
+  conceptName: string;
+  type: DemoExerciseType;
+  expectedAnswer: string;
+  acceptedAnswers?: string[];
+  options?: string[];
+  hint: string;
+  explanation: string;
+  correctionSteps: string[];
+  difficulty: "facile" | "moyen" | "cible";
+  image?: "function-graph";
+  isCorrect?: boolean;
+  generatedFromWeakness?: string;
 };
 
 export type DemoSession = {
@@ -310,41 +323,147 @@ export const demoCourseResults: DemoCourseResults = {
   ],
 };
 
+export const demoStudyExercises: DemoExercise[] = [
+  {
+    id: "exercise-1",
+    title: "Identifier le sommet",
+    question: "Observe le graphique et indique les coordonnées du sommet de la parabole.",
+    conceptName: "Sommet d'une parabole",
+    type: "short-answer",
+    expectedAnswer: "(2; 3,2)",
+    acceptedAnswers: ["(2;3,2)", "2;3,2", "2,3.2", "(2,3.2)", "x=2 y=3,2"],
+    hint: "Le sommet est le point le plus haut de la courbe sur ce graphique.",
+    explanation: "La parabole atteint sa valeur maximale près du point d'abscisse 2 et d'ordonnée 3,2.",
+    correctionSteps: [
+      "Repérer le point le plus haut de la parabole.",
+      "Lire son abscisse sur l'axe horizontal.",
+      "Lire son ordonnée sur l'axe vertical.",
+    ],
+    difficulty: "facile",
+    image: "function-graph",
+    isCorrect: true,
+  },
+  {
+    id: "exercise-2",
+    title: "Lire les racines",
+    question: "Combien de points d'intersection avec l'axe des abscisses vois-tu ?",
+    conceptName: "Racines graphiques",
+    type: "multiple-choice",
+    expectedAnswer: "2",
+    options: ["0", "1", "2", "4"],
+    hint: "Compte les endroits où la courbe coupe l'axe horizontal.",
+    explanation: "La courbe coupe l'axe des abscisses en deux points : la fonction a donc deux racines visibles.",
+    correctionSteps: [
+      "Repérer l'axe horizontal, où y vaut 0.",
+      "Chercher les intersections entre la courbe et cet axe.",
+      "Compter les intersections observées.",
+    ],
+    difficulty: "facile",
+    image: "function-graph",
+    isCorrect: true,
+  },
+  {
+    id: "exercise-3",
+    title: "Décrire les variations",
+    question: "Avant le sommet, la fonction est-elle croissante ou décroissante ?",
+    conceptName: "Variations",
+    type: "true-false",
+    expectedAnswer: "croissante",
+    acceptedAnswers: ["vrai", "true", "croissante"],
+    options: ["croissante", "décroissante"],
+    hint: "Lis la courbe de gauche à droite jusqu'au sommet.",
+    explanation: "Avant le sommet, la courbe monte : les valeurs de la fonction augmentent.",
+    correctionSteps: [
+      "Lire la courbe de gauche à droite.",
+      "Observer que la hauteur augmente jusqu'au sommet.",
+      "Conclure que la fonction est croissante avant le sommet.",
+    ],
+    difficulty: "moyen",
+    image: "function-graph",
+    isCorrect: true,
+  },
+  {
+    id: "exercise-4",
+    title: "Relier formule et courbe",
+    question: "Dans ax² + bx + c, quel coefficient indique si la parabole est tournée vers le haut ou vers le bas ?",
+    conceptName: "Coefficient directeur de la parabole",
+    type: "multiple-choice",
+    expectedAnswer: "a",
+    options: ["a", "b", "c", "x"],
+    hint: "Le signe du coefficient devant x² donne le sens d'ouverture.",
+    explanation: "C'est le coefficient a qui détermine le sens d'ouverture : si a est positif la parabole est tournée vers le haut, sinon vers le bas.",
+    correctionSteps: [
+      "Identifier le terme de degré 2 dans ax² + bx + c.",
+      "Regarder le coefficient placé devant x².",
+      "Relier son signe au sens d'ouverture de la parabole.",
+    ],
+    difficulty: "moyen",
+    isCorrect: false,
+  },
+  {
+    id: "exercise-5",
+    title: "Conclure sur le signe",
+    question: "Entre deux racines visibles, le signe de la fonction représentée est-il positif ou négatif si la courbe est au-dessus de l'axe ?",
+    conceptName: "Signe d'une fonction",
+    type: "short-answer",
+    expectedAnswer: "positif",
+    acceptedAnswers: ["positive", "la fonction est positive", "f(x) est positif"],
+    hint: "Au-dessus de l'axe des abscisses, les ordonnées sont supérieures à 0.",
+    explanation: "Quand la courbe est au-dessus de l'axe des abscisses, les valeurs de f(x) sont positives.",
+    correctionSteps: [
+      "Repérer la zone située entre les deux racines.",
+      "Comparer la courbe avec l'axe horizontal.",
+      "Conclure avec le signe des ordonnées.",
+    ],
+    difficulty: "moyen",
+    image: "function-graph",
+    isCorrect: true,
+  },
+];
+
+export const demoTargetedExercises: DemoExercise[] = [
+  {
+    id: "targeted-1",
+    title: "Sens d'ouverture ciblé",
+    question: "Pour f(x) = -2x² + 3x + 1, la parabole est-elle tournée vers le haut ou vers le bas ?",
+    conceptName: "Coefficient directeur de la parabole",
+    type: "multiple-choice",
+    expectedAnswer: "vers le bas",
+    options: ["vers le haut", "vers le bas"],
+    hint: "Regarde le signe du coefficient placé devant x².",
+    explanation: "Le coefficient de x² est -2, donc il est négatif. La parabole est tournée vers le bas.",
+    correctionSteps: [
+      "Identifier le coefficient a dans la formule.",
+      "Constater que a = -2 est négatif.",
+      "Associer a négatif à une parabole tournée vers le bas.",
+    ],
+    difficulty: "cible",
+    generatedFromWeakness: "Relier les coefficients de la formule à la forme de la courbe.",
+  },
+  {
+    id: "targeted-2",
+    title: "Coefficient à reconnaître",
+    question: "Dans f(x) = 3x² - 5x + 2, quel coefficient permet de connaître le sens d'ouverture ?",
+    conceptName: "Coefficient directeur de la parabole",
+    type: "short-answer",
+    expectedAnswer: "3",
+    acceptedAnswers: ["a", "coefficient a", "le coefficient a", "3"],
+    hint: "C'est le nombre qui multiplie x².",
+    explanation: "Le coefficient a est 3. C'est lui qui indique le sens d'ouverture de la parabole.",
+    correctionSteps: [
+      "Repérer le terme en x².",
+      "Lire le nombre qui le multiplie.",
+      "Nommer ce nombre comme le coefficient a.",
+    ],
+    difficulty: "cible",
+    generatedFromWeakness: "Relier les coefficients de la formule à la forme de la courbe.",
+  },
+];
+
 export const demoSession: DemoSession = {
   id: "demo-session-functions-graph",
   courseId: demoCourse.id,
-  exercises: [
-    {
-      id: "exercise-1",
-      title: "Identifier le sommet",
-      question: "Observe le graphique et indique les coordonnées du sommet.",
-      isCorrect: true,
-    },
-    {
-      id: "exercise-2",
-      title: "Lire les racines",
-      question: "Combien de points d'intersection avec l'axe des abscisses vois-tu ?",
-      isCorrect: true,
-    },
-    {
-      id: "exercise-3",
-      title: "Décrire les variations",
-      question: "Sur quel intervalle la fonction est-elle décroissante ?",
-      isCorrect: true,
-    },
-    {
-      id: "exercise-4",
-      title: "Relier formule et courbe",
-      question: "Quel coefficient explique l'ouverture de la parabole ?",
-      isCorrect: false,
-    },
-    {
-      id: "exercise-5",
-      title: "Conclure",
-      question: "Que peux-tu dire du signe de la fonction entre les deux racines ?",
-      isCorrect: true,
-    },
-  ],
+  exercises: demoStudyExercises,
   correctAnswers: 4,
   totalExercises: 5,
   strength: "Tu sais lire les informations principales d'un graphique.",
