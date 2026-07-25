@@ -81,6 +81,16 @@ export default function SessionCompleteScreen() {
         <SessionReport summary={summary} />
         <View style={styles.actions}>
           <AppButton title="Faire une série ciblée" onPress={handleTargeted} />
+          <AppButton
+            title="Voir mes résultats"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: "/course/[courseId]/results",
+                params: { courseId: demoSession.courseId },
+              })
+            }
+          />
           <AppButton title="Retour à l'accueil" variant="secondary" onPress={handleHome} />
         </View>
       </View>

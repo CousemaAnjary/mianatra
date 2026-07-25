@@ -59,11 +59,11 @@ export default function CourseResultsScreen() {
       <RecentActivityList activities={results.recentActivities} />
 
       <AppButton
-        title="Voir mes erreurs"
+        title="Reprendre avec des exercices"
         variant="secondary"
         onPress={() =>
           router.push({
-            pathname: "/session/[sessionId]/correction",
+            pathname: "/session/[sessionId]",
             params: { sessionId: demoSession.id },
           })
         }

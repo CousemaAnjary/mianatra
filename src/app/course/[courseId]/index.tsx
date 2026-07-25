@@ -135,16 +135,16 @@ export default function CourseDetailScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Voir mes erreurs"
+          accessibilityLabel="Voir mes résultats"
           onPress={() =>
             router.push({
-              pathname: "/session/[sessionId]/correction",
-              params: { sessionId: demoSession.id },
+              pathname: "/course/[courseId]/results",
+              params: { courseId: course.id },
             })
           }
           style={styles.secondaryButton}
         >
-          <AppText variant="label">Voir mes erreurs</AppText>
+          <AppText variant="label">Voir mes résultats</AppText>
         </Pressable>
       </View>
     </AppScreen>
