@@ -1,4 +1,5 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { check, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { concepts } from "./concepts.table";
 
 export const conceptProgress = sqliteTable(
@@ -17,4 +18,5 @@ export const conceptProgress = sqliteTable(
     lastPracticedAt: text("last_practiced_at"),
     updatedAt: text("updated_at").notNull(),
   },
+  (table) => [check("chk_concept_progress_score_range", sql`${table.score} >= 0 AND ${table.score} <= 100`)],
 );

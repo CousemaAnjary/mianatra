@@ -1,11 +1,23 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "../client";
 import { createId, nowIso } from "../helpers";
-import { exerciseAttempts } from "../schema";
-import type { ExerciseAttempt, NewExerciseAttempt } from "../types";
-import { assertNonEmpty, firstOrThrow } from "./repository-utils";
+import { conceptProgress, exerciseAttempts, studySessions } from "../schema";
+import type { ConceptProgress, ExerciseAttempt, NewExerciseAttempt, StudySession } from "../types";
+import { assertInteger, assertNonEmpty, assertNonNegative, firstOrThrow } from "./repository-utils";
+import { type UpsertConceptProgressInput, validateProgressInput } from "./progress.repository";
 
 export type CreateAttemptInput = Omit<NewExerciseAttempt, "id" | "createdAt">;
+export type SubmitAttemptWithProgressInput = {
+  attempt: CreateAttemptInput;
+  progress: {
+    conceptId: string;
+    input: UpsertConceptProgressInput;
+  };
+  sessionIndex?: {
+    sessionId: string;
+    currentExerciseIndex: number;
+  };
+};
 
 function validateAttemptInput(input: CreateAttemptInput) {
   assertNonEmpty(input.exerciseId, "exerciseId");
@@ -30,6 +42,67 @@ async function create(input: CreateAttemptInput): Promise<ExerciseAttempt> {
   );
 }
 
+function validateSessionIndex(input: SubmitAttemptWithProgressInput["sessionIndex"]) {
+  if (!input) {
+    return;
+  }
+  assertNonEmpty(input.sessionId, "sessionId");
+  assertInteger(input.currentExerciseIndex, "currentExerciseIndex");
+  assertNonNegative(input.currentExerciseIndex, "currentExerciseIndex");
+}
+
+async function submitWithProgress(input: SubmitAttemptWithProgressInput): Promise<{
+  attempt: ExerciseAttempt;
+  progress: ConceptProgress;
+  session: StudySession | null;
+}> {
+  validateAttemptInput(input.attempt);
+  assertNonEmpty(input.progress.conceptId, "conceptId");
+  validateProgressInput(input.progress.input);
+  validateSessionIndex(input.sessionIndex);
+
+  return db.transaction((tx) => {
+    const now = nowIso();
+    const attempt = firstOrThrow(
+      tx.insert(exerciseAttempts).values({ id: createId(), createdAt: now, ...input.attempt }).returning().all(),
+      "Unable to create exercise attempt.",
+    );
+    const existingProgress =
+      tx.select().from(conceptProgress).where(eq(conceptProgress.conceptId, input.progress.conceptId)).get() ?? null;
+    const progress = existingProgress
+      ? firstOrThrow(
+          tx
+            .update(conceptProgress)
+            .set({ ...input.progress.input, updatedAt: now })
+            .where(eq(conceptProgress.conceptId, input.progress.conceptId))
+            .returning()
+            .all(),
+          "Concept progress not found.",
+        )
+      : firstOrThrow(
+          tx
+            .insert(conceptProgress)
+            .values({ conceptId: input.progress.conceptId, updatedAt: now, ...input.progress.input })
+            .returning()
+            .all(),
+          "Unable to create concept progress.",
+        );
+    const session = input.sessionIndex
+      ? firstOrThrow(
+          tx
+            .update(studySessions)
+            .set({ currentExerciseIndex: input.sessionIndex.currentExerciseIndex })
+            .where(eq(studySessions.id, input.sessionIndex.sessionId))
+            .returning()
+            .all(),
+          "Study session not found.",
+        )
+      : null;
+
+    return { attempt, progress, session };
+  });
+}
+
 async function findAllBySession(sessionId: string): Promise<ExerciseAttempt[]> {
   return db.select().from(exerciseAttempts).where(eq(exerciseAttempts.sessionId, sessionId)).orderBy(desc(exerciseAttempts.createdAt)).all();
 }
@@ -40,6 +113,7 @@ async function findAllByExercise(exerciseId: string): Promise<ExerciseAttempt[]>
 
 export const attemptsRepository = {
   create,
+  submitWithProgress,
   findAllBySession,
   findAllByExercise,
 };

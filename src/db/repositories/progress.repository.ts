@@ -14,8 +14,8 @@ export type UpsertConceptProgressInput = {
 };
 
 function validateProgressInput(input: UpsertConceptProgressInput) {
-  if (input.score < 0 || input.score > 1) {
-    throw new Error("score must be between 0 and 1.");
+  if (input.score < 0 || input.score > 100) {
+    throw new Error("score must be between 0 and 100.");
   }
   assertNonEmpty(input.status, "status");
   assertInteger(input.attemptsCount, "attemptsCount");
@@ -76,3 +76,5 @@ export const progressRepository = {
   upsert,
   remove,
 };
+
+export { validateProgressInput };

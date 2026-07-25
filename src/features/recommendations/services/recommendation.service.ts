@@ -34,7 +34,7 @@ export function createRecommendationService(deps: RecommendationServiceDeps) {
     for (const course of courses) {
       const detail = await deps.courses.findDetailById(course.id);
       for (const concept of detail?.concepts ?? []) {
-        if (concept.progress?.status === "needs_reinforcement" || (concept.progress !== null && concept.progress.score < 0.5)) {
+        if (concept.progress?.status === "needs_reinforcement" || (concept.progress !== null && concept.progress.score < 50)) {
           weakConcepts.push({ courseId: course.id, conceptId: concept.id, conceptName: concept.name });
         }
       }

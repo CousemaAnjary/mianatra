@@ -163,13 +163,19 @@ assert.equal(normalizeRotation(-90), 270, "rotation normalisée");
 await assert.rejects(() => courseImportService.compileCourse(id("course-1")), CourseHasNoPagesError);
 assert.deepEqual((await courseImportService.reorderPages(id("course-1"), ["p2", "p1"])).map((page) => page.pageIndex), [0, 1], "ordre de pages continu");
 
-assert.equal(calculateConceptScore({ attemptsCount: 2, correctCount: 1, usedHintCount: 1 }), 47, "calcul score");
+assert.equal(calculateConceptScore({ attemptsCount: 0, correctCount: 0, usedHintCount: 0 }), 0, "score absent");
+assert.equal(calculateConceptScore({ attemptsCount: 1, correctCount: 0, usedHintCount: 0 }), 0, "score minimum");
+assert.equal(calculateConceptScore({ attemptsCount: 1, correctCount: 1, usedHintCount: 0 }), 100, "score maximum");
+assert.equal(calculateConceptScore({ attemptsCount: 2, correctCount: 1, usedHintCount: 1 }), 47, "calcul score pénalisé");
 assert.equal(determineConceptStatus(0, 0), "not_started", "statut not_started");
 assert.equal(determineConceptStatus(2, 40), "needs_reinforcement", "statut needs_reinforcement");
 assert.equal(determineConceptStatus(3, 90), "mastered", "statut mastered");
-assert.equal(calculateCourseProgressValue([{ score: 0.5 } as ConceptProgress, { score: 1 } as ConceptProgress]), 75, "progression cours");
+assert.equal(determineConceptStatus(2, 50), "in_progress", "statut seuil 50");
+assert.equal(determineConceptStatus(3, 85), "mastered", "statut seuil 85");
+assert.equal(calculateCourseProgressValue([{ score: 50 } as ConceptProgress, { score: 100 } as ConceptProgress]), 75, "progression cours 0-100");
 
 const attempts: ExerciseAttempt[] = [];
+const savedProgressRows: ConceptProgress[] = [];
 const progressService = createProgressService({
   attempts: { findAllByExercise: async () => attempts } as Parameters<typeof createProgressService>[0]["attempts"],
   concepts: { findAllByCourse: async () => [makeConcept(), makeConcept({ id: "concept-2", name: "Limites" })] } as Parameters<typeof createProgressService>[0]["concepts"],
@@ -178,19 +184,27 @@ const progressService = createProgressService({
     findByConcept: async () => null,
     findAll: async () => [],
     findAllByCourse: async () => [
-      { conceptId: "concept-1", score: 0.9, status: "mastered", attemptsCount: 2, correctCount: 2, lastPracticedAt: now, updatedAt: now },
-      { conceptId: "concept-2", score: 0.3, status: "needs_reinforcement", attemptsCount: 2, correctCount: 0, lastPracticedAt: now, updatedAt: now },
+      { conceptId: "concept-1", score: 90, status: "mastered", attemptsCount: 2, correctCount: 2, lastPracticedAt: now, updatedAt: now },
+      { conceptId: "concept-2", score: 30, status: "needs_reinforcement", attemptsCount: 2, correctCount: 0, lastPracticedAt: now, updatedAt: now },
     ],
-    upsert: async (conceptId, input) => ({ conceptId, updatedAt: now, ...input }),
+    upsert: async (conceptId, input) => {
+      const nextProgress = { conceptId, updatedAt: now, ...input, lastPracticedAt: input.lastPracticedAt ?? null };
+      savedProgressRows.push(nextProgress);
+      return nextProgress;
+    },
     remove: async () => undefined,
   } as Parameters<typeof createProgressService>[0]["progress"],
 });
 attempts.push({ id: "attempt-1", sessionId: "session-1", exerciseId: "exercise-1", userAnswer: "4", isCorrect: true, usedHint: false, mistakeType: null, responseTimeMs: null, createdAt: now });
-assert.equal((await progressService.updateAfterAttempt(attempts[0])).status, "to_discover", "tentative enregistrée puis progression");
+const updatedProgress = await progressService.updateAfterAttempt(attempts[0]);
+assert.equal(updatedProgress.status, "to_discover", "tentative enregistrée puis progression");
+assert.equal(savedProgressRows.at(-1)?.score, 100, "progression persistée sans conversion 0-1");
 assert.equal((await progressService.getStrongConcepts(id("course-1"))).length, 1, "notion forte");
 assert.equal((await progressService.getWeakConcepts(id("course-1"))).length, 1, "notion faible");
+attempts.length = 0;
 
 let activeSession: StudySession | null = null;
+const submittedProgressRows: ConceptProgress[] = [];
 const sessionService = createStudySessionService({
   courses: { findById: async () => makeCourse() } as Parameters<typeof createStudySessionService>[0]["courses"],
   exercises: { findAllByCourse: async () => [makeExercise()], findById: async () => makeExercise() } as Parameters<typeof createStudySessionService>[0]["exercises"],
@@ -207,19 +221,32 @@ const sessionService = createStudySessionService({
     abandon: async () => makeSession({ status: "abandoned" }),
   } as Parameters<typeof createStudySessionService>[0]["sessions"],
   attempts: {
-    create: async (input) => {
-      const attempt = { id: "attempt-2", createdAt: now, ...input, mistakeType: input.mistakeType ?? null, responseTimeMs: input.responseTimeMs ?? null };
+    create: async () => {
+      throw new Error("submitAnswer must use submitWithProgress");
+    },
+    findAllByExercise: async (exerciseId) => attempts.filter((attempt) => attempt.exerciseId === exerciseId),
+    submitWithProgress: async (input) => {
+      const attempt = {
+        id: `attempt-${attempts.length + 1}`,
+        createdAt: now,
+        ...input.attempt,
+        mistakeType: input.attempt.mistakeType ?? null,
+        responseTimeMs: input.attempt.responseTimeMs ?? null,
+      };
       attempts.push(attempt);
-      return attempt;
+      const nextProgress = { conceptId: input.progress.conceptId, updatedAt: now, ...input.progress.input, lastPracticedAt: input.progress.input.lastPracticedAt ?? null };
+      submittedProgressRows.push(nextProgress);
+      return { attempt, progress: nextProgress, session: null };
     },
   } as Parameters<typeof createStudySessionService>[0]["attempts"],
-  progress: { updateAfterAttempt: async () => ({ conceptId: "concept-1", score: 1, status: "to_discover", attemptsCount: 1, correctCount: 1, lastPracticedAt: now, updatedAt: now }) },
 });
 assert.equal((await sessionService.startSession({ courseId: id("course-1"), type: "initial" })).type, "initial", "session initiale");
 activeSession = null;
 assert.equal((await sessionService.startSession({ courseId: id("course-1"), type: "targeted", exerciseIds: ["exercise-1"], strategy: "provided_exercises" })).type, "targeted", "session ciblée");
 assert.equal((await sessionService.resumeSession(id("course-1"))).status, "active", "reprise session");
 assert.equal((await sessionService.submitAnswer({ sessionId: id("session-1"), exerciseId: id("exercise-1"), answer: "4" })).validation.status, "correct", "soumission tentative");
+assert.equal(submittedProgressRows.at(-1)?.score, 100, "submitAnswer calcule un score 0-100");
+assert.equal(submittedProgressRows.at(-1)?.attemptsCount, 1, "submitAnswer persiste tentative et progression ensemble");
 activeSession = null;
 await assert.rejects(() => sessionService.resumeSession(id("course-1")), SessionNotFoundError);
 activeSession = makeSession({ status: "abandoned" });

@@ -1,4 +1,4 @@
-import type { Course, CreateAttemptInput, Exercise, ExerciseAttempt, StudySession, StudySessionType } from "@/src/db";
+import type { Course, CreateAttemptInput, Exercise, ExerciseAttempt, StudySession, StudySessionType, SubmitAttemptWithProgressInput } from "@/src/db";
 import {
   CourseNotFoundError,
   ExerciseNotFoundError,
@@ -8,7 +8,7 @@ import {
   SessionNotFoundError,
 } from "@/src/features/shared";
 import { classifyMistake, validateExerciseAnswer } from "@/src/features/exercises";
-import { progressService } from "@/src/features/progress";
+import { calculateConceptScore, determineConceptStatus } from "@/src/features/progress";
 
 export type StartSessionInput = {
   courseId: string;
@@ -32,6 +32,8 @@ function durationSecondsFrom(startedAt: string) {
 type StudySessionServiceDeps = {
   attempts: {
     create: (input: CreateAttemptInput) => Promise<ExerciseAttempt>;
+    findAllByExercise: (exerciseId: string) => Promise<ExerciseAttempt[]>;
+    submitWithProgress: (input: SubmitAttemptWithProgressInput) => Promise<{ attempt: ExerciseAttempt }>;
   };
   courses: {
     findById: (id: string) => Promise<Course | null>;
@@ -40,7 +42,6 @@ type StudySessionServiceDeps = {
     findAllByCourse: (courseId: string) => Promise<Exercise[]>;
     findById: (id: string) => Promise<Exercise | null>;
   };
-  progress: Pick<typeof progressService, "updateAfterAttempt">;
   sessions: {
     findById: (id: string) => Promise<StudySession | null>;
     findActiveByCourse: (courseId: string) => Promise<StudySession | null>;
@@ -114,21 +115,32 @@ export function createStudySessionService(deps: StudySessionServiceDeps) {
       if (!validation.normalizedAnswer) {
         throw new InvalidAnswerError();
       }
-      const attempt = await deps.attempts.create({
-        sessionId: session.id,
-        exerciseId: exercise.id,
-        userAnswer: validation.normalizedAnswer,
-        isCorrect: validation.isCorrect,
-        usedHint: input.usedHint ?? false,
-        mistakeType: classifyMistake(validation, input.answer),
-        responseTimeMs: input.responseTimeMs ?? null,
+      const existingAttempts = await deps.attempts.findAllByExercise(exercise.id);
+      const attemptsCount = existingAttempts.length + 1;
+      const correctCount = existingAttempts.filter((row) => row.isCorrect).length + (validation.isCorrect ? 1 : 0);
+      const usedHintCount = existingAttempts.filter((row) => row.usedHint).length + (input.usedHint ? 1 : 0);
+      const score = calculateConceptScore({ attemptsCount, correctCount, usedHintCount });
+      const result = await deps.attempts.submitWithProgress({
+        attempt: {
+          sessionId: session.id,
+          exerciseId: exercise.id,
+          userAnswer: validation.normalizedAnswer,
+          isCorrect: validation.isCorrect,
+          usedHint: input.usedHint ?? false,
+          mistakeType: classifyMistake(validation, input.answer),
+          responseTimeMs: input.responseTimeMs ?? null,
+        },
+        progress: {
+          conceptId: exercise.conceptId,
+          input: {
+            score,
+            status: determineConceptStatus(attemptsCount, score),
+            attemptsCount,
+            correctCount,
+          },
+        },
       });
-      try {
-        await deps.progress.updateAfterAttempt(attempt);
-      } catch (error) {
-        throw new InvalidSessionStateError("Attempt was saved, but progress update failed.", error);
-      }
-      return { attempt, validation };
+      return { attempt: result.attempt, validation };
     },
     moveToNextExercise: async (sessionId: string) => {
       const session = await getSessionOrThrow(sessionId);
@@ -163,7 +175,6 @@ async function getDeps(): Promise<StudySessionServiceDeps> {
     attempts: repositories.attemptsRepository,
     courses: repositories.coursesRepository,
     exercises: repositories.exercisesRepository,
-    progress: progressService,
     sessions: repositories.studySessionsRepository,
   };
 }

@@ -29,6 +29,7 @@ export type {
   CreateSessionReportInput,
   CreateStudySessionInput,
   CreateSubjectInput,
+  SubmitAttemptWithProgressInput,
   CourseDetail,
   ReplaceConceptInput,
   SaveProfileInput,

@@ -157,6 +157,7 @@ const requiredMigrationFiles = [
   "20260725114524_quick_golden_guardian/migration.sql",
   "20260725153531_tranquil_skreet/migration.sql",
   "20260725165016_local_singleton_schema/migration.sql",
+  "20260725203000_concept_progress_score_100/migration.sql",
 ];
 
 function fail(message) {
@@ -274,6 +275,13 @@ try {
 
   const foreignKeyIssues = rows(db, "PRAGMA foreign_key_check");
   assert(foreignKeyIssues.length === 0, `foreign_key_check a retourné ${foreignKeyIssues.length} erreur(s)`);
+  const conceptProgressSql = String(
+    scalar(db, "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'concept_progress'"),
+  );
+  assert(
+    conceptProgressSql.includes("chk_concept_progress_score_range"),
+    "La contrainte concept_progress.score 0-100 est absente",
+  );
 
   assertThrows("FK courses.subject_id", () => {
     db.exec(`
@@ -319,11 +327,26 @@ try {
     `);
   });
 
+  db.exec(`
+    INSERT INTO concept_progress (concept_id, score, status, attempts_count, correct_count, last_practiced_at, updated_at)
+    VALUES ('concept-1', 0, 'not_started', 0, 0, NULL, '2026-07-25T00:00:00.000Z');
+
+    UPDATE concept_progress SET score = 42 WHERE concept_id = 'concept-1';
+    UPDATE concept_progress SET score = 100 WHERE concept_id = 'concept-1';
+  `);
+
+  assertThrows("concept_progress.score >= 0", () => {
+    db.exec("UPDATE concept_progress SET score = -1 WHERE concept_id = 'concept-1'");
+  });
+  assertThrows("concept_progress.score <= 100", () => {
+    db.exec("UPDATE concept_progress SET score = 101 WHERE concept_id = 'concept-1'");
+  });
+
   console.log("db:verify OK");
   console.log(`Tables métier: ${businessTables.length}`);
   console.log("users_table absent");
   console.log("Aucune donnée métier insérée par les migrations");
-  console.log("Contraintes FK, unicité et relation session/rapport vérifiées");
+  console.log("Contraintes FK, unicité, score 0-100 et relation session/rapport vérifiées");
 } finally {
   db.close();
   rmSync(tempDir, { recursive: true, force: true });

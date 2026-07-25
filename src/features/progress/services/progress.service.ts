@@ -34,7 +34,7 @@ export function createProgressService(deps: ProgressServiceDeps) {
       const usedHintCount = exerciseAttempts.filter((row) => row.usedHint).length;
       const score = calculateConceptScore({ attemptsCount, correctCount, usedHintCount });
       return deps.progress.upsert(exercise.conceptId, {
-        score: score / 100,
+        score,
         status: determineConceptStatus(attemptsCount, score),
         attemptsCount,
         correctCount,
@@ -47,7 +47,7 @@ export function createProgressService(deps: ProgressServiceDeps) {
       const progressRows = await deps.progress.findAllByCourse(courseId);
       return concepts.filter((concept) => {
         const progress = progressRows.find((row) => row.conceptId === concept.id);
-        return progress?.status === "needs_reinforcement" || (progress !== undefined && progress.score < 0.5);
+        return progress?.status === "needs_reinforcement" || (progress !== undefined && progress.score < 50);
       });
     },
     getStrongConcepts: async (courseId: string) => {
@@ -55,7 +55,7 @@ export function createProgressService(deps: ProgressServiceDeps) {
       const progressRows = await deps.progress.findAllByCourse(courseId);
       return concepts.filter((concept) => {
         const progress = progressRows.find((row) => row.conceptId === concept.id);
-        return progress?.status === "mastered" || (progress !== undefined && progress.score >= 0.85);
+        return progress?.status === "mastered" || (progress !== undefined && progress.score >= 85);
       });
     },
   };
