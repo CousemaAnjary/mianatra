@@ -1,54 +1,56 @@
-import { Image, StyleSheet, View } from "react-native";
+import { useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import {
-  AppButton,
-  AppCard,
-  AppScreen,
-  AppText,
-  ProgressBar,
-  ScreenHeader,
-} from "@/src/components/shared";
-import { demoCourse, demoSubjects } from "@/src/data/demo-data";
-import { radius, spacing } from "@/src/theme";
+import { CourseCard, GradeFilter, type GradeFilterValue } from "@/src/components/core";
+import { AppButton, AppCard, AppScreen, AppText, ScreenHeader } from "@/src/components/shared";
+import { demoCourses, demoGrades, type DemoCourse } from "@/src/data/demo-data";
+import { spacing } from "@/src/theme";
 
 export default function CoursesScreen() {
+  const filterValues: GradeFilterValue[] = ["Tous", ...demoGrades];
+  const [selectedFilter, setSelectedFilter] = useState<GradeFilterValue>("Tous");
+  const filteredCourses = useMemo(
+    () =>
+      selectedFilter === "Tous"
+        ? demoCourses
+        : demoCourses.filter((course) => course.grade === selectedFilter),
+    [selectedFilter],
+  );
+
+  function openCourse(course: DemoCourse) {
+    router.push({
+      pathname: "/course/[courseId]",
+      params: { courseId: course.id },
+    });
+  }
+
   return (
-    <AppScreen>
-      <ScreenHeader title="Mes cours" subtitle="Fondation de la bibliothèque" />
+    <AppScreen contentStyle={styles.screen}>
+      <ScreenHeader title="Mes cours" subtitle="Tous tes cours au même endroit." />
 
-      <AppCard style={styles.card}>
-        <Image
-          source={require("../../../assets/mianatra/sample_course_page_1.png")}
-          accessibilityIgnoresInvertColors
-          style={styles.preview}
-        />
-        <View style={styles.courseText}>
-          <AppText variant="subtitle">{demoCourse.title}</AppText>
-          <AppText tone="secondary">{demoCourse.subject}</AppText>
-          <ProgressBar value={demoCourse.progress} />
-        </View>
-        <AppButton
-          title="Ouvrir le cours"
-          onPress={() =>
-            router.push({
-              pathname: "/course/[courseId]",
-              params: { courseId: demoCourse.id },
-            })
-          }
-        />
-      </AppCard>
+      <GradeFilter
+        values={filterValues}
+        selectedValue={selectedFilter}
+        onChange={setSelectedFilter}
+      />
 
-      <View style={styles.subjects}>
-        {demoSubjects.map((subject) => (
-          <AppCard key={subject.id} style={styles.subjectCard}>
-            <AppText variant="label">{subject.name}</AppText>
+      <View style={styles.list}>
+        {filteredCourses.length > 0 ? (
+          filteredCourses.map((course) => (
+            <CourseCard key={course.id} course={course} onPress={openCourse} />
+          ))
+        ) : (
+          <AppCard style={styles.emptyCard}>
+            <AppText variant="subtitle">Aucun cours pour ce filtre.</AppText>
+            <AppText tone="secondary">
+              Les cours de démonstration apparaîtront ici dès que ce niveau aura du contenu.
+            </AppText>
           </AppCard>
-        ))}
+        )}
       </View>
 
       <AppButton
         title="Ajouter un cours"
-        variant="secondary"
         onPress={() => router.push("/course/add")}
       />
     </AppScreen>
@@ -56,23 +58,14 @@ export default function CoursesScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing[4],
-    marginBottom: spacing[5],
+  screen: {
+    gap: spacing[5],
+    paddingBottom: spacing[10],
   },
-  preview: {
-    width: "100%",
-    height: 148,
-    borderRadius: radius.large,
-  },
-  courseText: {
-    gap: spacing[2],
-  },
-  subjects: {
+  list: {
     gap: spacing[3],
-    marginBottom: spacing[5],
   },
-  subjectCard: {
-    paddingVertical: spacing[4],
+  emptyCard: {
+    gap: spacing[3],
   },
 });

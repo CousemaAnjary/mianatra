@@ -10,12 +10,18 @@ export type DemoSubject = {
   name: string;
 };
 
+export type DemoGrade = "2nde" | "1ère" | "Tale";
+
 export type DemoCourse = {
   id: string;
   title: string;
   subject: string;
   pageCount: number;
   progress: number;
+  chapters?: number;
+  focus?: string;
+  grade?: DemoGrade;
+  iconName?: string;
 };
 
 export type DemoNotion = {
@@ -42,6 +48,20 @@ export type DemoSession = {
   nextRecommendation: string;
 };
 
+export type DemoProfileStats = {
+  globalProgress: number;
+  mastered: number;
+  progressing: number;
+  needsWork: number;
+};
+
+export type DemoProfileMenuItem = {
+  id: string;
+  label: string;
+  iconName: string;
+  action: "soon" | "logout";
+};
+
 export const demoProfile: DemoProfile = {
   firstName: "Fara",
   age: 17,
@@ -62,7 +82,63 @@ export const demoCourse: DemoCourse = {
   subject: "Mathématiques",
   pageCount: 4,
   progress: 62,
+  chapters: 4,
+  focus: "fonctions",
+  grade: "2nde",
+  iconName: "square-root-alt",
 };
+
+export const demoCourses: DemoCourse[] = [
+  demoCourse,
+  {
+    id: "demo-electricity",
+    title: "Circuits électriques",
+    subject: "Physique-Chimie",
+    pageCount: 3,
+    progress: 48,
+    chapters: 3,
+    focus: "électricité",
+    grade: "2nde",
+    iconName: "flask",
+  },
+  {
+    id: "demo-important-dates",
+    title: "Repères historiques",
+    subject: "Histoire-Géographie",
+    pageCount: 2,
+    progress: 75,
+    chapters: 2,
+    focus: "dates importantes",
+    grade: "1ère",
+    iconName: "globe-africa",
+  },
+  {
+    id: "demo-dissertation",
+    title: "Méthode de dissertation",
+    subject: "Français",
+    pageCount: 3,
+    progress: 80,
+    chapters: 3,
+    focus: "dissertation",
+    grade: "Tale",
+    iconName: "comment-dots",
+  },
+  {
+    id: "demo-genetics",
+    title: "Génétique",
+    subject: "SVT",
+    pageCount: 2,
+    progress: 55,
+    chapters: 2,
+    focus: "génétique",
+    grade: "1ère",
+    iconName: "seedling",
+  },
+];
+
+export const demoHomeCourses = demoCourses.slice(0, 3);
+
+export const demoGrades: DemoGrade[] = ["2nde", "1ère", "Tale"];
 
 export const demoNotions: DemoNotion[] = [
   { id: "canonical-form", label: "Forme canonique", status: "mastered" },
@@ -111,3 +187,18 @@ export const demoSession: DemoSession = {
   notionToImprove: "Relier les coefficients de la formule à la forme de la courbe.",
   nextRecommendation: "Revoir la fiche de révision avant une nouvelle série courte.",
 };
+
+export const demoProfileStats: DemoProfileStats = {
+  globalProgress: 58,
+  mastered: 8,
+  progressing: 12,
+  needsWork: 6,
+};
+
+export const demoProfileMenu: DemoProfileMenuItem[] = [
+  { id: "goals", label: "Mes objectifs", iconName: "clipboard-list", action: "soon" },
+  { id: "study-time", label: "Temps d'étude", iconName: "stopwatch", action: "soon" },
+  { id: "settings", label: "Paramètres", iconName: "cog", action: "soon" },
+  { id: "help", label: "Aide et contact", iconName: "question-circle", action: "soon" },
+  { id: "logout", label: "Se déconnecter", iconName: "sign-out-alt", action: "logout" },
+];

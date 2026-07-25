@@ -11,6 +11,9 @@ export const colors = {
   border: "#E8D9C7",
   error: "#B53434",
   white: "#FFFFFF",
+  subjectHistory: "#8A4319",
+  subjectFrench: "#5A427D",
+  subjectSvt: "#5A8E35",
 } as const;
 
 export type ColorName = keyof typeof colors;

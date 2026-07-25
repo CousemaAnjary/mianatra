@@ -1,116 +1,120 @@
-import { Image, ImageBackground, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { CourseCard, RecommendationCard } from "@/src/components/core";
 import {
   AppButton,
-  AppCard,
   AppScreen,
   AppText,
-  ProgressBar,
-  ScreenHeader,
   StatusBadge,
 } from "@/src/components/shared";
-import { demoCourse, demoProfile, demoSession } from "@/src/data/demo-data";
+import { demoCourse, demoHomeCourses, demoProfile, demoSession, type DemoCourse } from "@/src/data/demo-data";
 import { colors, radius, spacing } from "@/src/theme";
 
 export default function HomeScreen() {
-  return (
-    <AppScreen>
-      <ScreenHeader
-        title={`Bonjour ${demoProfile.firstName}`}
-        subtitle="Mianatra"
-        showBack={false}
-      />
+  function openCourse(course: DemoCourse) {
+    router.push({
+      pathname: "/course/[courseId]",
+      params: { courseId: course.id },
+    });
+  }
 
-      <ImageBackground
-        source={require("../../../assets/mianatra/pattern_lamba_horizontal.png")}
-        resizeMode="cover"
-        imageStyle={styles.heroPattern}
-        style={styles.hero}
-      >
-        <View style={styles.heroText}>
-          <AppText variant="heading">Coquille prête</AppText>
-          <AppText tone="secondary">
-            La navigation principale et les routes de base sont disponibles.
+  return (
+    <AppScreen contentStyle={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <AppText variant="title">{`Bonjour ${demoProfile.firstName} 👋`}</AppText>
+          <AppText variant="subtitle" tone="secondary">
+            Prête pour une petite révision ?
           </AppText>
         </View>
-        <Image
-          source={require("../../../assets/mianatra/image_mini_function_graph.png")}
-          accessibilityIgnoresInvertColors
-          style={styles.heroImage}
-        />
-      </ImageBackground>
-
-      <AppCard style={styles.card}>
-        <StatusBadge label={demoCourse.subject} tone="success" />
-        <AppText variant="subtitle">{demoCourse.title}</AppText>
-        <AppText tone="secondary">
-          {demoCourse.pageCount} pages importées pour la démonstration.
-        </AppText>
-        <ProgressBar
-          value={demoCourse.progress}
-          accessibilityLabel="Progression du cours de démonstration"
-        />
-        <AppText variant="caption" tone="muted">
-          Progression visuelle : {demoCourse.progress} %
-        </AppText>
-      </AppCard>
-
-      <View style={styles.actions}>
-        <AppButton title="Mes cours" onPress={() => router.push("/courses")} />
-        <AppButton
-          title="Détail du cours"
-          variant="secondary"
-          onPress={() =>
-            router.push({
-              pathname: "/course/[courseId]",
-              params: { courseId: demoCourse.id },
-            })
-          }
-        />
-        <AppButton
-          title="Session d'exercices"
-          variant="tertiary"
-          onPress={() =>
-            router.push({
-              pathname: "/session/[sessionId]",
-              params: { sessionId: demoSession.id },
-            })
-          }
-        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          style={styles.notificationButton}
+        >
+          <FontAwesome5 name="bell" size={22} color={colors.textPrimary} />
+        </Pressable>
       </View>
+
+      <View style={styles.streakWrap}>
+        <StatusBadge label="4 jours de suite" tone="warning" />
+      </View>
+
+      <RecommendationCard
+        course={demoCourse}
+        onContinue={() =>
+          router.push({
+            pathname: "/session/[sessionId]",
+            params: { sessionId: demoSession.id },
+          })
+        }
+      />
+
+      <View style={styles.sectionHeader}>
+        <AppText variant="heading">Mes cours</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Voir tous les cours"
+          onPress={() => router.push("/courses")}
+          style={styles.linkButton}
+        >
+          <AppText variant="label" tone="secondary">
+            Voir tout
+          </AppText>
+        </Pressable>
+      </View>
+
+      <View style={styles.courseList}>
+        {demoHomeCourses.map((course) => (
+          <CourseCard key={course.id} course={course} onPress={openCourse} />
+        ))}
+      </View>
+
+      <AppButton title="Ajouter un cours" onPress={() => router.push("/course/add")} />
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    minHeight: 188,
+  screen: {
+    gap: spacing[5],
+    paddingBottom: spacing[10],
+  },
+  header: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-    overflow: "hidden",
-    borderRadius: radius.xl,
-    padding: spacing[5],
-    marginBottom: spacing[5],
-    backgroundColor: colors.surfaceSoft,
+    alignItems: "flex-start",
+    gap: spacing[3],
   },
-  heroPattern: {
-    opacity: 0.18,
-  },
-  heroText: {
+  headerCopy: {
     flex: 1,
     gap: spacing[2],
   },
-  heroImage: {
-    width: 112,
-    height: 112,
-    borderRadius: radius.large,
+  notificationButton: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  card: {
+  streakWrap: {
+    alignSelf: "flex-end",
+    marginTop: -spacing[3],
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing[3],
-    marginBottom: spacing[5],
   },
-  actions: {
+  linkButton: {
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  courseList: {
     gap: spacing[3],
   },
 });
