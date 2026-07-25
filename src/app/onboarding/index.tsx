@@ -57,6 +57,7 @@ export default function OnboardingScreen() {
           source={require("../../../assets/mianatra/illustration_onboarding_students.png")}
           accessibilityLabel="Deux lycéens en train d'étudier"
           accessibilityIgnoresInvertColors
+          resizeMode="contain"
           style={styles.illustration}
         />
 
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: "92%",
     height: 230,
-    resizeMode: "contain",
   },
   footer: {
     gap: spacing[3],

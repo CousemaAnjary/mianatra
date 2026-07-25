@@ -38,6 +38,7 @@ export function CoursePageItem({
         source={pageImages[page.assetName]}
         accessibilityLabel={`${page.accessibilityLabel}, position ${pageNumber}`}
         accessibilityIgnoresInvertColors
+        resizeMode="cover"
         style={styles.image}
       />
       <View style={styles.numberBadge}>
@@ -92,7 +93,6 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover",
   },
   numberBadge: {
     position: "absolute",

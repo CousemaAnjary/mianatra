@@ -62,6 +62,7 @@ export default function CourseDetailScreen() {
           source={require("../../../../assets/mianatra/illustration_student_reading.png")}
           accessibilityLabel="Élève lisant son cours"
           accessibilityIgnoresInvertColors
+          resizeMode="contain"
           style={styles.heroImage}
         />
       </View>
@@ -171,7 +172,6 @@ const styles = StyleSheet.create({
   heroImage: {
     width: 130,
     height: 160,
-    resizeMode: "contain",
     borderRadius: radius.large,
   },
   secondaryActions: {

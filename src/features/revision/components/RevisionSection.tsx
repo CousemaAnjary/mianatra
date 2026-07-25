@@ -21,6 +21,7 @@ export function RevisionSection({ section }: RevisionSectionProps) {
           source={revisionImages[section.image]}
           accessibilityLabel={`Illustration : ${section.title}`}
           accessibilityIgnoresInvertColors
+          resizeMode="contain"
           style={styles.image}
         />
       ) : null}
@@ -43,7 +44,6 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: 190,
-    resizeMode: "contain",
     borderRadius: radius.large,
     backgroundColor: colors.surface,
   },
