@@ -47,7 +47,9 @@ export default function OnboardingScreen() {
           <AppText variant="title" style={styles.brand}>
             Mianatra
           </AppText>
-          <AppText variant="subtitle">Tout cours, pour réussir.</AppText>
+          <AppText variant="subtitle" style={styles.tagline}>
+            Tout Cours
+          </AppText>
           <AppText tone="secondary" style={styles.centered}>
             {"Faisons connaissance pour mieux t'accompagner."}
           </AppText>
@@ -74,10 +76,14 @@ export default function OnboardingScreen() {
         />
 
         <View style={styles.footer}>
-          <ProgressBar value={25} accessibilityLabel="Étape 1 sur 4" />
+          <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
           <View style={styles.footerRow}>
             <AppText tone="secondary">1 sur 4</AppText>
-            <AppButton title="Suivant" onPress={validateAndContinue} style={styles.nextButton} />
+            <AppButton
+              title="Suivant  →"
+              onPress={validateAndContinue}
+              style={styles.nextButton}
+            />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -88,14 +94,14 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    paddingTop: spacing[2],
-    paddingBottom: spacing[10],
+    paddingTop: spacing[1],
+    paddingBottom: spacing[8],
   },
   keyboardArea: {
-    gap: spacing[4],
+    gap: spacing[3],
   },
   lamba: {
-    height: 44,
+    height: 34,
     overflow: "hidden",
     borderRadius: radius.medium,
     backgroundColor: colors.surface,
@@ -105,12 +111,17 @@ const styles = StyleSheet.create({
   },
   titleArea: {
     alignItems: "center",
-    gap: spacing[1],
+    gap: spacing[2],
+    paddingTop: spacing[3],
   },
   brand: {
     color: colors.primary,
-    fontSize: 38,
-    lineHeight: 44,
+    fontSize: 44,
+    lineHeight: 50,
+  },
+  tagline: {
+    fontSize: 24,
+    lineHeight: 28,
   },
   centered: {
     maxWidth: 300,
@@ -118,8 +129,8 @@ const styles = StyleSheet.create({
   },
   illustration: {
     alignSelf: "center",
-    width: "88%",
-    height: 180,
+    width: "90%",
+    height: 190,
   },
   footer: {
     gap: spacing[2],
@@ -131,6 +142,8 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   nextButton: {
-    flex: 1,
+    width: "68%",
+    maxWidth: 260,
+    minWidth: 220,
   },
 });
