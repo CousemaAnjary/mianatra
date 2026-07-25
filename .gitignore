@@ -33,6 +33,8 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+server/.env
+server/.env.local
 mianatra.db
 *.db
 *.db-shm
