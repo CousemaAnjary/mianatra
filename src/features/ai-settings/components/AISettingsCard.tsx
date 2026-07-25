@@ -21,7 +21,7 @@ type TestState = {
 } | null;
 
 function modelLabel(model: GemmaModel) {
-  return model === "gemma-4-26b-a4b-it" ? "Gemma 4 26B" : "Gemma 4 31B";
+  return model === "gemma-4-26b-a4b-it" ? "Gemma 4 26B - plus rapide" : "Gemma 4 31B";
 }
 
 function statusLabel(config: AIConfiguration | null) {

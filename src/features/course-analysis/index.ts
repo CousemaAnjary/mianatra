@@ -16,7 +16,8 @@ export type {
 } from "./services/persist-course-analysis.service";
 export { buildCoursePageAnalysisPrompt } from "./prompts/course-page-analysis.prompt";
 export { detectAnalysisInconsistencies } from "./domain/detect-analysis-inconsistencies";
-export { mergeCoursePageAnalyses, normalizeAnalysisText } from "./domain/merge-course-page-analyses";
+export { normalizeAnalysisText } from "./domain/analysis-text";
+export { mergeCoursePageAnalyses } from "./domain/merge-course-page-analyses";
 export {
   coursePageAnalysisInputSchema,
   coursePageAnalysisSchema,

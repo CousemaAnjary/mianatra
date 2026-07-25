@@ -8,6 +8,30 @@ export type ExerciseGenerationErrorCode =
   | "EXERCISE_GENERATION_CONCEPT_NOT_FOUND"
   | "EXERCISE_GENERATION_PERSISTENCE_FAILED";
 
+export type ExerciseGenerationDiagnostics = {
+  errorCode: string;
+  issueCount?: number;
+  issuePaths?: string[];
+  zodCodes?: string[];
+  generatedCount?: number;
+  acceptedCount?: number;
+  rejectedCount?: number;
+  rejectionReasons?: string[];
+  rejectionReasonCounts?: Record<string, number>;
+  unknownConceptReferences?: string[];
+  duplicateQuestionCount?: number;
+  acceptedTypes?: string[];
+  rejectedExercises?: {
+    exerciseIndex: number;
+    reason: string;
+    issuePaths: string[];
+    zodCodes: string[];
+    expectedTypes: string[];
+    receivedType: string;
+    exerciseType?: string;
+  }[];
+};
+
 export class ExerciseGenerationError extends Error {
   constructor(
     public readonly code: ExerciseGenerationErrorCode,
@@ -50,8 +74,11 @@ export class ExerciseGenerationAINotConfiguredError extends ExerciseGenerationEr
 }
 
 export class ExerciseGenerationInvalidOutputError extends ExerciseGenerationError {
-  constructor(cause?: unknown) {
+  readonly diagnostics: ExerciseGenerationDiagnostics;
+
+  constructor(cause?: unknown, diagnostics: ExerciseGenerationDiagnostics = { errorCode: "EXERCISE_GENERATION_INVALID_OUTPUT" }) {
     super("EXERCISE_GENERATION_INVALID_OUTPUT", "Generated exercises output is invalid.", { cause });
+    this.diagnostics = diagnostics;
   }
 }
 

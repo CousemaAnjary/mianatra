@@ -164,10 +164,13 @@ function deps(input: {
   sheetError?: unknown;
   exercisesError?: unknown;
   holdAnalysis?: boolean;
+  holdExercises?: boolean;
 } = {}) {
   const snapshots: CourseProcessingSnapshot[] = [];
   let releaseAnalysis: (() => void) | null = null;
+  let releaseExercises: (() => void) | null = null;
   let analysisCalls = 0;
+  let exerciseCalls = 0;
   const dependency: CourseProcessingDeps = {
     courses: { findDetailById: async () => input.detail ?? detail() },
     pages: {
@@ -210,6 +213,12 @@ function deps(input: {
         return { sheet: sheet() };
       },
       generateExercises: async () => {
+        exerciseCalls += 1;
+        if (input.holdExercises) {
+          await new Promise<void>((resolve) => {
+            releaseExercises = resolve;
+          });
+        }
         if (input.exercisesError) {
           throw input.exercisesError;
         }
@@ -225,7 +234,11 @@ function deps(input: {
     get analysisCalls() {
       return analysisCalls;
     },
+    get exerciseCalls() {
+      return exerciseCalls;
+    },
     releaseAnalysis: () => releaseAnalysis?.(),
+    releaseExercises: () => releaseExercises?.(),
   };
 }
 
@@ -308,6 +321,28 @@ async function main() {
     exercisesError: new Error("EXERCISES_FAIL"),
   });
   await assert.rejects(() => exercisesFailure.controller.generateAssetsFromPersisted(), /EXERCISES_FAIL/, "échec exercices sans appel Gemini réel");
+  assert.equal(exercisesFailure.analysisCalls, 0, "aucune nouvelle analyse image pendant génération exercices persistée");
+
+  const exercisesAfterConfirmation = deps({ exercisesError: new Error("EXERCISES_FAIL") });
+  await exercisesAfterConfirmation.controller.startProcessing();
+  await assert.rejects(() => exercisesAfterConfirmation.controller.confirmAndContinue(), /EXERCISES_FAIL/, "échec exercices après confirmation");
+  assert.equal(exercisesAfterConfirmation.snapshots.at(-1)?.pendingAnalysis, null, "confirmer masqué après persistance");
+  assert.equal(exercisesAfterConfirmation.snapshots.at(-1)?.result.revisionSheet?.id, "sheet-1", "fiche conservée après échec exercices");
+  assert.equal(exercisesAfterConfirmation.analysisCalls, 1, "analyse initiale unique");
+  await assert.rejects(() => exercisesAfterConfirmation.controller.retry(), /EXERCISES_FAIL/, "retry relance uniquement exercices");
+  assert.equal(exercisesAfterConfirmation.analysisCalls, 1, "retry exercices sans nouvelle analyse image");
+  assert.equal(exercisesAfterConfirmation.exerciseCalls, 2, "retry appelle les exercices une fois de plus");
+
+  const doubleExercises = deps({
+    detail: detail({ course: course({ status: "ready", summary: "Résumé" }), latestAnalysis: analysis(), latestRevisionSheet: sheet(), concepts: [{ ...concept(), progress: null }] }),
+    holdExercises: true,
+  });
+  const firstExercises = doubleExercises.controller.generateAssetsFromPersisted();
+  const secondExercises = doubleExercises.controller.generateAssetsFromPersisted();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  doubleExercises.releaseExercises();
+  await Promise.all([firstExercises, secondExercises]);
+  assert.equal(doubleExercises.exerciseCalls, 1, "double clic génération exercices bloqué");
 
   assert.equal(parseRevisionSheetContent(sheet()).status, "ready", "fiche réelle affichable");
   assert.equal(parseRevisionSheetContent(sheet({ contentJson: "{bad" })).status, "invalid", "fiche invalide gérée");

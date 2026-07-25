@@ -16,7 +16,7 @@ export type {
   GenerateCourseExercisesResult,
   PersistGeneratedExerciseInput,
 } from "./services/generate-course-exercises.service";
-export { generatedExerciseSchema, generatedExercisesSchema, generatedExerciseTypes } from "./schemas/generated-exercises.schema";
+export { exerciseGenerationSchema, generatedExerciseSchema, generatedExercisesSchema, generatedExerciseTypes } from "./schemas/generated-exercises.schema";
 export type { GeneratedExercise, GeneratedExercisesOutput } from "./schemas/generated-exercises.schema";
 export { buildCourseExercisesPrompt } from "./prompts/course-exercises.prompt";
 export {

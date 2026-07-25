@@ -1,6 +1,7 @@
 import type { CourseAnalysis, CourseDetail, CoursePage, RevisionSheet, Concept, Exercise } from "@/src/db";
 import type { AnalyzeCoursePagesInput, MultiPageCourseAnalysis, PageAnalysisResult } from "@/src/features/course-analysis";
 import { AllCoursePagesAnalysisFailedError } from "@/src/features/course-analysis";
+import { ExerciseGenerationInvalidOutputError } from "@/src/features/exercises";
 import { logCourseProcessing } from "../utils/processing-log";
 import type { PreparedCoursePageImage } from "../utils/page-image";
 
@@ -95,6 +96,10 @@ function emptyResult(): CourseProcessingResult {
   };
 }
 
+function isDevelopment() {
+  return typeof __DEV__ !== "undefined" ? __DEV__ : true;
+}
+
 function userMessage(error: unknown) {
   if (error instanceof AllCoursePagesAnalysisFailedError) {
     const codes = new Set(error.pageErrorCodes.map((item) => item.errorCode).filter(Boolean));
@@ -131,6 +136,27 @@ function userMessage(error: unknown) {
     return "La clé Gemini configurée est invalide.";
   }
   if (error instanceof Error && "code" in error && typeof error.code === "string") {
+    if (error instanceof ExerciseGenerationInvalidOutputError) {
+      const diagnostics = error.diagnostics;
+      if (diagnostics.errorCode === "EXERCISE_GENERATION_JSON_INVALID") {
+        return "La réponse IA des exercices n'est pas un JSON valide.";
+      }
+      if (diagnostics.errorCode === "EXERCISE_GENERATION_SCHEMA_INVALID") {
+        return "La structure des exercices générés est invalide.";
+      }
+      if (diagnostics.unknownConceptReferences && diagnostics.unknownConceptReferences.length > 0) {
+        return "Certains exercices ciblent des notions inconnues.";
+      }
+      if (diagnostics.rejectionReasons?.includes("invalid_multiple_choice")) {
+        return "Certains QCM générés sont incohérents.";
+      }
+      if (diagnostics.errorCode === "EXERCISE_GENERATION_TOO_FEW_ACCEPTED") {
+        if (isDevelopment() && typeof diagnostics.acceptedCount === "number" && typeof diagnostics.generatedCount === "number") {
+          return `${diagnostics.acceptedCount} exercice(s) valide(s) sur ${diagnostics.generatedCount} généré(s).`;
+        }
+        return "Moins de trois exercices valides générés.";
+      }
+    }
     if (error.code.includes("RATE_LIMIT") || error.code.includes("QUOTA")) {
       return "Quota Gemini dépassé. Réessaie plus tard.";
     }
@@ -168,6 +194,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
   const listeners = new Set<(snapshot: CourseProcessingSnapshot) => void>();
   let lastFailedAction: "analysis" | "sheet" | "exercises" | null = null;
   let activeProcessing: Promise<MultiPageCourseAnalysis> | null = null;
+  let activeExerciseGeneration: Promise<CourseProcessingResult> | null = null;
 
   function emit(next: Partial<CourseProcessingSnapshot>) {
     snapshot = { ...snapshot, ...next };
@@ -338,6 +365,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
 
       emit({
         status: "generating_sheet",
+        pendingAnalysis: null,
         result: {
           ...snapshot.result,
           persistedAnalysis: persisted.analysis,
@@ -352,7 +380,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
         result: { ...snapshot.result, revisionSheet: revisionSheet.sheet },
         progress: { ...snapshot.progress, percent: 85, message: "Génération des exercices" },
       });
-      const exercises = await deps.generation.generateExercises(courseId);
+      const exercises = await generateExercisesOnly();
 
       emit({
         status: "completed",
@@ -387,7 +415,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
         result: { ...snapshot.result, revisionSheet },
         progress: { ...snapshot.progress, percent: 85, message: "Génération des exercices" },
       });
-      const exercises = await deps.generation.generateExercises(courseId);
+      const exercises = await generateExercisesOnly();
       emit({
         status: "completed",
         result: { ...snapshot.result, revisionSheet, exercises: exercises.exercises },
@@ -402,18 +430,37 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
     }
   }
 
+  async function generateExercisesOnly() {
+    if (activeExerciseGeneration) {
+      return activeExerciseGeneration;
+    }
+    const running = (async () => {
+      const exercises = await deps.generation.generateExercises(courseId);
+      return { ...snapshot.result, exercises: exercises.exercises };
+    })();
+    activeExerciseGeneration = running;
+    try {
+      return await running;
+    } finally {
+      activeExerciseGeneration = null;
+    }
+  }
+
   async function retry() {
     if (lastFailedAction === "sheet" && snapshot.pendingAnalysis) {
       return confirmAndContinue();
     }
+    if (lastFailedAction === "sheet") {
+      return generateAssetsFromPersisted();
+    }
     if (lastFailedAction === "exercises") {
       try {
         emit({ status: "generating_exercises", error: null, progress: { ...snapshot.progress, percent: 85, message: "Génération des exercices" } });
-        const exercises = await deps.generation.generateExercises(courseId);
+        const result = await generateExercisesOnly();
         emit({
           status: "completed",
           pendingAnalysis: null,
-          result: { ...snapshot.result, exercises: exercises.exercises },
+          result,
           progress: { ...snapshot.progress, percent: 100, message: "Cours prêt à réviser" },
         });
         await refreshDetail();

@@ -1,6 +1,6 @@
 import type { CoursePageAnalysis } from "../schemas/course-page-analysis.schema";
 import type { AnalysisInconsistency, PageAnalysisResult } from "../types/multi-page-course-analysis.types";
-import { normalizeAnalysisText } from "./merge-course-page-analyses";
+import { normalizeAnalysisText } from "./analysis-text";
 
 type FieldName = AnalysisInconsistency["field"];
 

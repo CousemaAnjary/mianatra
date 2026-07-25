@@ -70,6 +70,7 @@ export default function CourseDetailScreen() {
   }, [realDetail, processing.result.exercises.length]);
 
   const action = useMemo<CoursePrimaryAction>(() => {
+    const isBusy = ["analyzing", "persisting", "generating_sheet", "generating_exercises"].includes(processing.status);
     if (!realDetail) {
       return {
         title: "Réviser le cours",
@@ -81,14 +82,16 @@ export default function CourseDetailScreen() {
           }),
       };
     }
-    if (realDetail.course.status !== "ready" || !realDetail.latestAnalysis) {
+    const hasAnalysis = Boolean(realDetail.latestAnalysis || processing.result.persistedAnalysis || processing.pendingAnalysis || processing.result.analysis);
+    const hasRevisionSheet = Boolean(realDetail.latestRevisionSheet || processing.result.revisionSheet);
+    if (!hasAnalysis) {
       return {
         title: "Analyser le cours",
         iconName: "magic" as const,
         onPress: () => void processing.startProcessing?.()?.catch(() => undefined),
       };
     }
-    if (!realDetail.latestRevisionSheet && !processing.result.revisionSheet) {
+    if (!hasRevisionSheet) {
       return {
         title: "Générer ma fiche",
         iconName: "file-alt" as const,
@@ -97,9 +100,12 @@ export default function CourseDetailScreen() {
     }
     if (realExerciseCount === 0 && processing.result.exercises.length === 0) {
       return {
-        title: "Générer les exercices",
+        title: isBusy ? "Génération des exercices" : "Réessayer les exercices",
         iconName: "pen" as const,
-        onPress: () => void processing.generateAssetsFromPersisted?.()?.catch(() => undefined),
+        onPress: () => {
+          const run = processing.status === "error" ? processing.retry?.() : processing.generateAssetsFromPersisted?.();
+          void run?.catch(() => undefined);
+        },
       };
     }
     return {

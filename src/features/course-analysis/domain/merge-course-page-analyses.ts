@@ -1,11 +1,8 @@
 import type { CoursePageAnalysis } from "../schemas/course-page-analysis.schema";
 import { multiPageCourseAnalysisSchema, type MultiPageCourseAnalysis } from "../schemas/multi-page-course-analysis.schema";
 import type { PageAnalysisResult } from "../types/multi-page-course-analysis.types";
+import { normalizeAnalysisText } from "./analysis-text";
 import { detectAnalysisInconsistencies } from "./detect-analysis-inconsistencies";
-
-export function normalizeAnalysisText(value: string) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
-}
 
 function cleanText(value: string) {
   return value.trim().replace(/\s+/g, " ");
