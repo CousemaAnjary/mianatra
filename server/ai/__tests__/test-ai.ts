@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 import {
@@ -66,7 +68,22 @@ const validEnv = {
   GEMMA_TIMEOUT_MS: "120000",
   GEMMA_MAX_OUTPUT_TOKENS: "8192",
 };
-const forbiddenGeminiPublicKey = [["EXPO_", "PUBLIC_"].join(""), "GEM", "INI_API_KEY"].join("");
+const forbiddenPublicSecretNames = ["EXPO_PUBLIC_GEMINI_API_KEY", "EXPO_PUBLIC_GOOGLE_API_KEY", "EXPO_PUBLIC_GEMMA_API_KEY"];
+function listFiles(relativePath: string): string[] {
+  const absolutePath = join(process.cwd(), relativePath);
+  if (!statSync(absolutePath).isDirectory()) {
+    return [relativePath];
+  }
+  return readdirSync(absolutePath).flatMap((entry) => {
+    const childPath = join(relativePath, entry);
+    const childStats = statSync(join(process.cwd(), childPath));
+    return childStats.isDirectory() ? listFiles(childPath) : [childPath];
+  });
+}
+
+const expoCodeFiles = ["app.json", ...listFiles("src/app"), ...listFiles("src/components"), ...listFiles("src/features")].filter((file) =>
+  /\.(json|ts|tsx)$/.test(file),
+);
 
 function createProvider(transport = new MockGeminiTransport(), logs: AILogEvent[] = []) {
   return {
@@ -88,7 +105,13 @@ async function main() {
   assert.throws(() => loadAIConfig({ ...validEnv, GEMINI_API_KEY: "" }), /AI environment variables/, "clé absente");
   assert.throws(() => loadAIConfig({ ...validEnv, GEMMA_MODEL: "gemma-3" }), /AI environment variables/, "modèle non autorisé");
   assert.throws(() => loadAIConfig({ ...validEnv, GEMMA_TIMEOUT_MS: "0" }), /AI environment variables/, "timeout invalide");
-  assert.throws(() => loadAIConfig({ ...validEnv, [forbiddenGeminiPublicKey]: "public-secret" }), /Forbidden public/, "clé publique interdite");
+  assert.throws(() => loadAIConfig({ ...validEnv, EXPO_PUBLIC_GEMINI_API_KEY: "public-secret" }), /Forbidden public/, "clé publique interdite");
+  for (const relativePath of expoCodeFiles) {
+    const content = readFileSync(join(process.cwd(), relativePath), "utf8");
+    for (const secretName of forbiddenPublicSecretNames) {
+      assert.equal(content.includes(secretName), false, `clé publique interdite absente de ${relativePath}`);
+    }
+  }
 
   const fake = new FakeAIProvider({ textResponse: "{\"ok\":true}", imageResponse: "{\"image\":true}" });
   const service = new AIService(fake);

@@ -11,11 +11,10 @@ const serverEnvSchema = z.object({
 
 export type AIConfig = z.infer<typeof serverEnvSchema>;
 
-const expoPublicPrefix = ["EXPO_", "PUBLIC_"].join("");
 const forbiddenPublicSecretNames = [
-  [expoPublicPrefix, "GEM", "INI_API_KEY"].join(""),
-  [expoPublicPrefix, "GOOGLE_API_KEY"].join(""),
-  [expoPublicPrefix, "GEM", "MA_API_KEY"].join(""),
+  "EXPO_PUBLIC_GEMINI_API_KEY",
+  "EXPO_PUBLIC_GOOGLE_API_KEY",
+  "EXPO_PUBLIC_GEMMA_API_KEY",
 ];
 
 export function loadAIConfig(env: Record<string, string | undefined> = process.env): AIConfig {
