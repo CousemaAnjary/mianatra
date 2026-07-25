@@ -151,7 +151,20 @@ async function main() {
   const retry = scriptedAnalyzer({
     0: [new CoursePageAnalysisTimeoutError(), analysis()],
   });
-  const retryResult = await analyzeCoursePages(input([page(0)]), { analyzeSinglePage: retry.analyzeSinglePage });
+  let doneCount = 0;
+  const retryWithProgress = await analyzeCoursePages(input([page(0)]), {
+    analyzeSinglePage: retry.analyzeSinglePage,
+    onPageDone: () => {
+      doneCount += 1;
+    },
+  });
+  assert.equal(retryWithProgress.pageResults[0].attemptsCount, 2, "retry sur timeout avec progression");
+  assert.equal(doneCount, 1, "progression notifiée une seule fois par page malgré le retry");
+
+  const retryWithoutProgress = scriptedAnalyzer({
+    0: [new CoursePageAnalysisTimeoutError(), analysis()],
+  });
+  const retryResult = await analyzeCoursePages(input([page(0)]), { analyzeSinglePage: retryWithoutProgress.analyzeSinglePage });
   assert.equal(retryResult.pageResults[0].attemptsCount, 2, "retry sur timeout");
 
   const noRetry = scriptedAnalyzer({

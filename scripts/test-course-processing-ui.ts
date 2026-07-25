@@ -201,12 +201,37 @@ async function main() {
   assert.equal(successful.snapshots.some((snapshot) => snapshot.status === "generating_exercises"), true, "génération exercices");
   assert.equal(successful.snapshots.at(-1)?.status, "completed", "état final");
 
+  const onePageDoubleNotification = deps({
+    detail: detail({ course: course({ pageCount: 1 }), pages: [page(0)] }),
+    pages: [page(0)],
+    analysisResult: multiPageAnalysis({ successfulPageCount: 1 }),
+  });
+  await onePageDoubleNotification.controller.startProcessing();
+  assert.equal(onePageDoubleNotification.snapshots.at(-1)?.progress.currentPage, 1, "progression bornée au nombre de pages");
+  assert.equal(onePageDoubleNotification.snapshots.at(-1)?.progress.totalPages, 1, "total de pages conservé");
+
   const partial = deps({ analysisResult: multiPageAnalysis({ failedPageCount: 1, warnings: ["Page 2 floue."] }) });
   await partial.controller.startProcessing();
   assert.deepEqual(partial.snapshots.at(-1)?.result.warnings, ["Page 2 floue.", "1 page(s) non analysée(s)."], "analyse partielle avertie");
 
   const failed = deps({ analysisError: new AllCoursePagesAnalysisFailedError([]) });
   await assert.rejects(() => failed.controller.startProcessing(), AllCoursePagesAnalysisFailedError, "analyse totalement échouée");
+
+  const keyMissing = deps({
+    analysisError: new AllCoursePagesAnalysisFailedError([
+      {
+        pageId: "page-0",
+        pageIndex: 0,
+        status: "failed",
+        analysis: null,
+        errorCode: "COURSE_ANALYSIS_KEY_MISSING",
+        errorMessage: "CoursePageAnalysisKeyMissingError",
+        attemptsCount: 1,
+      },
+    ]),
+  });
+  await assert.rejects(() => keyMissing.controller.startProcessing(), AllCoursePagesAnalysisFailedError, "erreur clé propagée");
+  assert.equal(keyMissing.snapshots.at(-1)?.error, "Configure ta clé Gemini avant de lancer l'analyse.", "erreur IA non masquée en page illisible");
 
   const sheetFailure = deps({ sheetError: new Error("SHEET_FAIL") });
   await sheetFailure.controller.startProcessing();

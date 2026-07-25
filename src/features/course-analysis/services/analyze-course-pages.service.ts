@@ -19,6 +19,7 @@ import type { AnalyzeSinglePage, PageAnalysisResult } from "../types/multi-page-
 
 export type AnalyzeCoursePagesDependencies = {
   analyzeSinglePage: AnalyzeSinglePage;
+  onPageDone?: (result: PageAnalysisResult) => void;
 };
 
 export class NoCoursePagesProvidedError extends Error {
@@ -174,7 +175,9 @@ export async function analyzeCoursePages(
       knownGrade: parsed.knownGrade,
       additionalInstructions: parsed.additionalInstructions,
     };
-    pageResults.push(await analyzePage(pageInput, page.pageId ?? null, dependencies.analyzeSinglePage));
+    const result = await analyzePage(pageInput, page.pageId ?? null, dependencies.analyzeSinglePage);
+    pageResults.push(result);
+    dependencies.onPageDone?.(result);
   }
 
   if (pageResults.every((result) => result.status === "failed")) {

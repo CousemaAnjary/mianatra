@@ -80,6 +80,25 @@ function emptyResult(): CourseProcessingResult {
 
 function userMessage(error: unknown) {
   if (error instanceof AllCoursePagesAnalysisFailedError) {
+    const codes = new Set(error.pageErrorCodes.map((item) => item.errorCode).filter(Boolean));
+    if (codes.has("COURSE_ANALYSIS_KEY_MISSING")) {
+      return "Configure ta clé Gemini avant de lancer l'analyse.";
+    }
+    if (codes.has("COURSE_ANALYSIS_KEY_INVALID")) {
+      return "La clé Gemini configurée est invalide.";
+    }
+    if (codes.has("COURSE_ANALYSIS_MODEL_UNAVAILABLE")) {
+      return "Le modèle IA configuré n'est pas disponible.";
+    }
+    if (codes.has("COURSE_ANALYSIS_QUOTA_EXCEEDED")) {
+      return "Quota Gemini dépassé. Réessaie plus tard.";
+    }
+    if (codes.has("COURSE_ANALYSIS_TIMEOUT")) {
+      return "La demande IA a expiré. Réessaie.";
+    }
+    if (codes.has("COURSE_ANALYSIS_PROVIDER_UNAVAILABLE") || codes.has("COURSE_ANALYSIS_JSON_INVALID") || codes.has("COURSE_ANALYSIS_SCHEMA_INVALID")) {
+      return "L'analyse IA a échoué. Réessaie avec une image plus nette ou relance plus tard.";
+    }
     return "Toutes les pages sont illisibles ou n'ont pas pu être analysées.";
   }
   if (error instanceof Error && error.name.includes("GeminiApiKeyMissing")) {
@@ -170,7 +189,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
           knownGrade: detail.course.grade,
         },
         () => {
-          completedPages += 1;
+          completedPages = Math.min(pages.length, completedPages + 1);
           setProgress({
             currentPage: completedPages,
             totalPages: pages.length,

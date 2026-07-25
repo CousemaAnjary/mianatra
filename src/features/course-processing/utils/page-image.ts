@@ -7,6 +7,13 @@ export type PreparedCoursePageImage = {
   mimeType: "image/jpeg" | "image/png" | "image/webp";
 };
 
+export class CoursePageImageReadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CoursePageImageReadError";
+  }
+}
+
 function mimeTypeFromUri(uri: string): PreparedCoursePageImage["mimeType"] {
   const lower = uri.toLocaleLowerCase();
   if (lower.includes(".jpg") || lower.includes(".jpeg")) {
@@ -29,24 +36,26 @@ function parseDataUri(uri: string) {
   };
 }
 
-async function uriToBase64(uri: string) {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error("Unable to read page image."));
-    reader.onloadend = () => {
-      const result = String(reader.result ?? "");
-      const marker = ";base64,";
-      const markerIndex = result.indexOf(marker);
-      resolve(markerIndex >= 0 ? result.slice(markerIndex + marker.length) : result);
-    };
-    reader.readAsDataURL(blob);
-  });
+async function uriToBase64(uri: string, readAsBase64 = defaultReadAsBase64) {
+  try {
+    return await readAsBase64(uri);
+  } catch {
+    throw new CoursePageImageReadError("Impossible de lire le fichier local de cette page.");
+  }
 }
 
-export async function prepareCoursePageImage(page: CoursePage): Promise<PreparedCoursePageImage> {
+async function defaultReadAsBase64(uri: string) {
+  if (!uri.trim()) {
+    throw new CoursePageImageReadError("Le fichier local de cette page est introuvable.");
+  }
+  const FileSystem = await import("expo-file-system/legacy");
+  return FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+}
+
+export async function prepareCoursePageImage(
+  page: CoursePage,
+  options: { readAsBase64?: (uri: string) => Promise<string> } = {},
+): Promise<PreparedCoursePageImage> {
   const dataUri = parseDataUri(page.localUri);
   if (dataUri) {
     return {
@@ -60,6 +69,6 @@ export async function prepareCoursePageImage(page: CoursePage): Promise<Prepared
     pageId: page.id,
     pageIndex: page.pageIndex,
     mimeType: mimeTypeFromUri(page.localUri),
-    imageBase64: await uriToBase64(page.localUri),
+    imageBase64: await uriToBase64(page.localUri, options.readAsBase64),
   };
 }

@@ -17,13 +17,8 @@ export async function createDefaultCourseProcessingDeps(): Promise<CourseProcess
     analysis: {
       analyzeCoursePages: (input: AnalyzeCoursePagesInput, onPageDone: () => void) =>
         analyzeCoursePages(input, {
-          analyzeSinglePage: async (pageInput) => {
-            try {
-              return await analyzeCoursePage(pageInput, { aiService: createConfiguredMobileAIService });
-            } finally {
-              onPageDone();
-            }
-          },
+          analyzeSinglePage: (pageInput) => analyzeCoursePage(pageInput, { aiService: createConfiguredMobileAIService }),
+          onPageDone: () => onPageDone(),
         }),
       persistCourseAnalysis: (input) =>
         persistCourseAnalysis(input, {

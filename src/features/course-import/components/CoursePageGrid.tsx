@@ -1,9 +1,8 @@
 import { View } from "react-native";
-import type { DemoCoursePage } from "@/src/data/demo-data";
-import { CoursePageItem } from "./CoursePageItem";
+import { CoursePageItem, type DisplayCoursePage } from "./CoursePageItem";
 
 type CoursePageGridProps = {
-  pages: DemoCoursePage[];
+  pages: DisplayCoursePage[];
   onRemove: (id: string) => void;
   onMoveLeft: (id: string) => void;
   onMoveRight: (id: string) => void;
