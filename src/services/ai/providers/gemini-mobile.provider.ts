@@ -35,6 +35,7 @@ const textInputSchema = z.object({
       maxOutputTokens: z.number().int().positive().optional(),
       systemInstruction: z.string().trim().nullable().optional(),
       thinkingLevel: z.enum(["minimal", "low", "medium", "high"]).nullable().optional(),
+      responseJsonSchema: z.record(z.string(), z.unknown()).nullable().optional(),
     })
     .nullable()
     .optional(),
@@ -205,6 +206,7 @@ export class GeminiMobileProvider implements AIProvider {
             maxOutputTokens: input.options?.maxOutputTokens ?? DEFAULT_GEMINI_MAX_OUTPUT_TOKENS,
             systemInstruction: input.options?.systemInstruction ?? null,
             thinkingLevel: input.options?.thinkingLevel ?? "minimal",
+            responseJsonSchema: input.options?.responseJsonSchema ?? null,
           },
           request: { signal, timeoutMs },
         }),

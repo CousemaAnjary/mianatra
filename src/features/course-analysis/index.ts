@@ -48,6 +48,7 @@ export {
   CoursePageAnalysisKeyMissingError,
   CoursePageAnalysisModelError,
   CoursePageAnalysisProviderError,
+  CoursePageAnalysisProviderRequestInvalidError,
   CoursePageAnalysisQuotaError,
   CoursePageAnalysisSchemaError,
   CoursePageAnalysisTimeoutError,

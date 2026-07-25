@@ -1,5 +1,7 @@
 export { AIService } from "./ai.service";
 export { extractJsonValue } from "./json-response";
+export { toSerializableJsonSchema } from "./zod-json-schema";
+export type { SerializableJsonSchema } from "./zod-json-schema";
 export type { AIProvider } from "./ai-provider.interface";
 export {
   AIAuthenticationError,
@@ -11,6 +13,7 @@ export {
   AIModelNotFoundError,
   AINetworkError,
   AIProviderUnavailableError,
+  AIRequestInvalidError,
   AIRateLimitError,
   AIRequestAbortedError,
   AISchemaValidationError,

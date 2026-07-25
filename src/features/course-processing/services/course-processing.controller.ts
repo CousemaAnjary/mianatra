@@ -115,6 +115,7 @@ function userMessage(error: unknown) {
     }
     if (
       codes.has("COURSE_ANALYSIS_PROVIDER_UNAVAILABLE") ||
+      codes.has("COURSE_ANALYSIS_PROVIDER_REQUEST_INVALID") ||
       codes.has("COURSE_ANALYSIS_JSON_INVALID") ||
       codes.has("COURSE_ANALYSIS_JSON_TRUNCATED") ||
       codes.has("COURSE_ANALYSIS_SCHEMA_INVALID")

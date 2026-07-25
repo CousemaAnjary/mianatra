@@ -65,6 +65,12 @@ export class AINetworkError extends AIError {
   }
 }
 
+export class AIRequestInvalidError extends AIError {
+  constructor(message = "AI provider rejected the request as invalid.", options?: AIErrorOptions) {
+    super("AI_REQUEST_INVALID", message, options);
+  }
+}
+
 export class AIRateLimitError extends AIError {
   constructor(message = "AI rate limit exceeded.", options?: AIErrorOptions) {
     super("AI_RATE_LIMIT", message, options);

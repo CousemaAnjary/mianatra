@@ -28,6 +28,7 @@ export type AIGenerationOptions = {
   maxOutputTokens?: number;
   systemInstruction?: string | null;
   thinkingLevel?: AIThinkingLevel | null;
+  responseJsonSchema?: Record<string, unknown> | null;
 };
 
 export type AITextInput = {

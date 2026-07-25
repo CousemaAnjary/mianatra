@@ -3,6 +3,7 @@ export type CoursePageAnalysisErrorCode =
   | "COURSE_ANALYSIS_KEY_MISSING"
   | "COURSE_ANALYSIS_INPUT_INVALID"
   | "COURSE_ANALYSIS_IMAGE_INVALID"
+  | "COURSE_ANALYSIS_PROVIDER_REQUEST_INVALID"
   | "COURSE_ANALYSIS_PROVIDER_UNAVAILABLE"
   | "COURSE_ANALYSIS_TIMEOUT"
   | "COURSE_ANALYSIS_QUOTA_EXCEEDED"
@@ -50,6 +51,12 @@ export class CoursePageAnalysisImageError extends CoursePageAnalysisError {
 export class CoursePageAnalysisProviderError extends CoursePageAnalysisError {
   constructor(message = "Course page analysis provider is unavailable.", cause?: unknown) {
     super("COURSE_ANALYSIS_PROVIDER_UNAVAILABLE", message, { cause });
+  }
+}
+
+export class CoursePageAnalysisProviderRequestInvalidError extends CoursePageAnalysisError {
+  constructor(message = "Course page analysis provider rejected the request.", cause?: unknown) {
+    super("COURSE_ANALYSIS_PROVIDER_REQUEST_INVALID", message, { cause });
   }
 }
 

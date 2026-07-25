@@ -4,6 +4,7 @@ import {
   AIModelNotFoundError,
   AINetworkError,
   AIProviderUnavailableError,
+  AIRequestInvalidError,
   AIRateLimitError,
 } from "../ai.errors";
 import type { AIGenerationOptions, AIResponseDiagnostics, AITokenUsage } from "../ai.types";
@@ -135,6 +136,60 @@ function diagnosticsDetails(diagnostics: AIResponseDiagnostics) {
   };
 }
 
+function generationConfig(options: AIGenerationOptions | null | undefined) {
+  const base = {
+    temperature: options?.temperature ?? 0.2,
+    maxOutputTokens: options?.maxOutputTokens,
+    thinkingConfig: {
+      thinkingLevel: "minimal",
+    },
+  };
+  if (!options?.responseJsonSchema) {
+    return base;
+  }
+  return {
+    ...base,
+    responseMimeType: "application/json",
+    responseJsonSchema: options.responseJsonSchema,
+  };
+}
+
+function shortProviderMessage(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
+function readProviderError(body: unknown) {
+  const error = typeof body === "object" && body !== null && "error" in body && typeof body.error === "object" && body.error !== null
+    ? body.error
+    : null;
+  const message = error && "message" in error && typeof error.message === "string" ? shortProviderMessage(error.message) : null;
+  const providerStatus = error && "status" in error && typeof error.status === "string" ? error.status : null;
+  let providerReason: string | null = null;
+  let providerField: string | null = null;
+  if (error && "details" in error && Array.isArray(error.details)) {
+    for (const detail of error.details) {
+      if (typeof detail !== "object" || detail === null) {
+        continue;
+      }
+      if ("reason" in detail && typeof detail.reason === "string") {
+        providerReason = detail.reason;
+      }
+      if ("fieldViolations" in detail && Array.isArray(detail.fieldViolations)) {
+        const fieldViolation = detail.fieldViolations.find((item: unknown) => typeof item === "object" && item !== null && "field" in item);
+        if (typeof fieldViolation === "object" && fieldViolation !== null && "field" in fieldViolation && typeof fieldViolation.field === "string") {
+          providerField = fieldViolation.field;
+        }
+      }
+    }
+  }
+  return {
+    providerStatus,
+    providerMessage: message,
+    providerReason,
+    providerField,
+  };
+}
+
 function extractTokenUsage(response: unknown): AITokenUsage | null {
   if (typeof response !== "object" || response === null || !("usageMetadata" in response)) {
     return null;
@@ -150,24 +205,34 @@ function extractTokenUsage(response: unknown): AITokenUsage | null {
   };
 }
 
-function mapHttpError(status: number, body: unknown) {
-  const message =
-    typeof body === "object" && body !== null && "error" in body && typeof body.error === "object" && body.error !== null && "message" in body.error
-      ? String(body.error.message)
-      : `Gemini HTTP error ${status}.`;
+function mapHttpError(status: number, body: unknown, generationConfigKeys: string[]) {
+  const provider = readProviderError(body);
+  const providerMessage = status === 400 ? "Gemini request was invalid." : provider.providerMessage;
+  const details = {
+    httpStatus: status,
+    providerStatus: provider.providerStatus,
+    providerMessage,
+    providerReason: provider.providerReason,
+    providerField: provider.providerField,
+    generationConfigKeys: generationConfigKeys.join(","),
+  };
+  const message = providerMessage ?? `Gemini HTTP error ${status}.`;
+  if (status === 400) {
+    return new AIRequestInvalidError("Gemini rejected the request configuration.", { httpStatus: status, details });
+  }
   if (status === 401 || status === 403) {
-    return new AIAuthenticationError("Gemini API key was rejected.", { httpStatus: status, details: { message } });
+    return new AIAuthenticationError("Gemini API key was rejected.", { httpStatus: status, details });
   }
   if (status === 404) {
-    return new AIModelNotFoundError("Gemini model was not found.", { httpStatus: status, details: { message } });
+    return new AIModelNotFoundError("Gemini model was not found.", { httpStatus: status, details });
   }
   if (status === 429) {
-    return new AIRateLimitError("Gemini quota exceeded.", { httpStatus: status, details: { message } });
+    return new AIRateLimitError("Gemini quota exceeded.", { httpStatus: status, details });
   }
   if (status >= 500) {
-    return new AIProviderUnavailableError("Gemini service is unavailable.", { httpStatus: status, details: { message } });
+    return new AIProviderUnavailableError("Gemini service is unavailable.", { httpStatus: status, details });
   }
-  return new AIProviderUnavailableError("Gemini request failed.", { httpStatus: status, details: { message } });
+  return new AIProviderUnavailableError(message, { httpStatus: status, details });
 }
 
 export class GeminiRestTransport implements GeminiMobileTransport {
@@ -187,6 +252,7 @@ export class GeminiRestTransport implements GeminiMobileTransport {
     }
     const url = `${this.endpoint}/models/${encodeURIComponent(params.model)}:generateContent`;
     let response: Response;
+    const requestGenerationConfig = generationConfig(params.options);
     try {
       response = await this.fetchFn(url, {
         method: "POST",
@@ -197,14 +263,7 @@ export class GeminiRestTransport implements GeminiMobileTransport {
         signal: params.request.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts }],
-          generationConfig: {
-            temperature: params.options?.temperature ?? 0.2,
-            maxOutputTokens: params.options?.maxOutputTokens,
-            responseMimeType: "application/json",
-            thinkingConfig: {
-              thinkingLevel: "minimal",
-            },
-          },
+          generationConfig: requestGenerationConfig,
           systemInstruction: params.options?.systemInstruction ? { parts: [{ text: params.options.systemInstruction }] } : undefined,
         }),
       });
@@ -215,7 +274,7 @@ export class GeminiRestTransport implements GeminiMobileTransport {
     }
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      throw mapHttpError(response.status, body);
+      throw mapHttpError(response.status, body, Object.keys(requestGenerationConfig));
     }
     const outputText = extractText(body);
     const diagnostics = extractDiagnostics(body, outputText);

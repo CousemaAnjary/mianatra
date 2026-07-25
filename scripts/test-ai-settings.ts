@@ -7,6 +7,7 @@ import {
   AIJsonParseError,
   AIJsonTruncatedError,
   AINetworkError,
+  AIRequestInvalidError,
   AIRateLimitError,
   AISchemaValidationError,
   AITimeoutError,
@@ -14,10 +15,12 @@ import {
   GeminiMobileProvider,
   GeminiRestTransport,
   extractJsonValue,
+  toSerializableJsonSchema,
   type GeminiGenerateParams,
   type GeminiGenerateResponse,
   type GeminiMobileTransport,
 } from "../src/services/ai";
+import { coursePageAnalysisSchema } from "../src/features/course-analysis";
 import {
   GeminiApiKeyMissingError,
   GemmaModelUnsupportedError,
@@ -143,9 +146,97 @@ async function main() {
   );
   transport.response = { text: "{\"ok\":\"bad\"}", finishReason: "STOP", tokenUsage: null };
   await assert.rejects(
-    () => structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, z.object({ ok: z.boolean() })),
+    async () => {
+      try {
+        await structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, z.object({ ok: z.boolean() }));
+      } catch (error) {
+        assert.ok(error instanceof AISchemaValidationError, "erreur Zod typée");
+        assert.deepEqual(error.details, { issueCount: 1, path: "ok", code: "invalid_type", message: "Invalid input: expected boolean, received string" }, "diagnostic Zod sûr");
+        assert.doesNotMatch(JSON.stringify(error.details), /bad|valid-key|abc|\{"ok"/, "diagnostic sans contenu sensible");
+        throw error;
+      }
+    },
     AISchemaValidationError,
     "sortie Zod invalide distinguée",
+  );
+
+  const pageJsonSchema = toSerializableJsonSchema(coursePageAnalysisSchema);
+  assert.equal("$schema" in pageJsonSchema, false, "$schema racine retiré");
+  assert.equal(pageJsonSchema.type, "object", "schéma Zod converti en objet JSON Schema");
+  assert.deepEqual(pageJsonSchema.required, [
+    "detectedTitle",
+    "detectedSubject",
+    "detectedLevel",
+    "concepts",
+    "definitions",
+    "formulas",
+    "examples",
+    "dates",
+    "keywords",
+    "partialSummary",
+    "warnings",
+    "confidence",
+  ], "toutes les propriétés requises");
+  assert.equal(pageJsonSchema.additionalProperties, false, "additionalProperties false");
+  const schemaProperties = pageJsonSchema.properties as Record<string, Record<string, unknown>>;
+  assert.deepEqual(schemaProperties.detectedLevel.anyOf, [{ type: "string", minLength: 1 }, { type: "null" }], "nullable converti");
+  assert.equal(schemaProperties.concepts.type, "array", "concepts sous forme de tableau");
+  assert.equal((schemaProperties.concepts.items as Record<string, unknown>).type, "object", "concepts sous forme d'objets");
+  assert.equal(schemaProperties.definitions.type, "array", "tableaux acceptent les tableaux vides");
+  assert.deepEqual(schemaProperties.confidence.anyOf, [{ type: "number", minimum: 0, maximum: 1 }, { type: "null" }], "confidence entre 0 et 1 ou null");
+  assert.equal("$schema" in toSerializableJsonSchema(coursePageAnalysisSchema), false, "conversion sans mutation observable");
+
+  transport.response = {
+    text: JSON.stringify({
+      detectedTitle: "Cours",
+      detectedSubject: "SVT",
+      detectedLevel: null,
+      concepts: [{ name: "Mitose", description: null }],
+      definitions: [],
+      formulas: [],
+      examples: [],
+      dates: [],
+      keywords: [],
+      partialSummary: "",
+      warnings: [],
+      confidence: null,
+    }),
+    finishReason: "STOP",
+    tokenUsage: null,
+  };
+  const pageStructured = await structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, coursePageAnalysisSchema);
+  assert.equal(pageStructured.detectedLevel, null, "nullable accepté");
+  assert.deepEqual(pageStructured.definitions, [], "tableau vide accepté");
+  assert.equal(transport.calls.at(-1)?.options?.responseJsonSchema?.additionalProperties, false, "schéma transmis au transport");
+  transport.response = {
+    text: JSON.stringify({
+      detectedTitle: "Cours",
+      detectedSubject: "SVT",
+      detectedLevel: null,
+      concepts: [],
+      definitions: [],
+      formulas: [],
+      examples: [],
+      dates: [],
+      keywords: [],
+      partialSummary: "",
+      warnings: [],
+      confidence: 0.5,
+      extra: "sensitive-response-value",
+    }),
+    finishReason: "STOP",
+    tokenUsage: null,
+  };
+  await assert.rejects(
+    () => structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, coursePageAnalysisSchema),
+    AISchemaValidationError,
+    "propriété supplémentaire rejetée",
+  );
+  transport.response = { text: "{\"detectedTitle\":\"Cours\"}", finishReason: "STOP", tokenUsage: null };
+  await assert.rejects(
+    () => structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, coursePageAnalysisSchema),
+    AISchemaValidationError,
+    "propriété requise absente rejetée",
   );
 
   let capturedRequestBody: unknown = null;
@@ -190,8 +281,77 @@ async function main() {
   assert.equal(restResponse.diagnostics?.outputTokenCount, 12, "diagnostic outputTokenCount");
   assert.notEqual(capturedRequestBody, null, "requête REST capturée");
   const generationConfig = (capturedRequestBody as { generationConfig?: Record<string, unknown> }).generationConfig;
-  assert.equal(generationConfig?.responseMimeType, "application/json", "responseMimeType application/json envoyé");
+  assert.equal("responseMimeType" in (generationConfig ?? {}), false, "génération texte sans ancien responseMimeType");
+  assert.equal("responseSchema" in (generationConfig ?? {}), false, "génération texte sans ancien responseSchema");
   assert.deepEqual(generationConfig?.thinkingConfig, { thinkingLevel: "minimal" }, "thinkingLevel minimal envoyé");
+  assert.equal("responseFormat" in (generationConfig ?? {}), false, "génération texte conserve le mode sans schéma");
+
+  capturedRequestBody = null;
+  await restTransport.generateContent({
+    apiKey: "valid-key",
+    model: "gemma-4-26b-a4b-it",
+    prompt: "Image",
+    imageBase64: "abc",
+    mimeType: "image/png",
+    options: { maxOutputTokens: 32, responseJsonSchema: pageJsonSchema },
+    request: { signal: new AbortController().signal, timeoutMs: 1000 },
+  });
+  const schemaGenerationConfig = (capturedRequestBody as { generationConfig?: Record<string, unknown> }).generationConfig;
+  assert.equal(schemaGenerationConfig?.responseMimeType, "application/json", "responseJsonSchema présent produit responseMimeType");
+  assert.deepEqual(schemaGenerationConfig?.responseJsonSchema, pageJsonSchema, "responseJsonSchema placé directement dans generationConfig");
+  assert.equal("responseSchema" in (schemaGenerationConfig ?? {}), false, "ancien responseSchema absent avec responseFormat");
+  assert.equal("responseFormat" in (schemaGenerationConfig ?? {}), false, "responseFormat absent pour REST generateContent");
+  assert.deepEqual(schemaGenerationConfig?.thinkingConfig, { thinkingLevel: "minimal" }, "thinkingLevel minimal conservé avec schéma");
+
+  let invalidRequestBody: unknown = null;
+  const invalidRestTransport = new GeminiRestTransport({
+    fetchFn: async (_url, init) => {
+      invalidRequestBody = JSON.parse(String(init?.body));
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 400,
+            status: "INVALID_ARGUMENT",
+            message: "Request contains an invalid generation config with sensitive-schema-value that should be truncated away from logs.",
+            details: [
+              {
+                reason: "BAD_REQUEST",
+                fieldViolations: [{ field: "generation_config.response_format" }],
+              },
+            ],
+          },
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  });
+  await assert.rejects(
+    async () => {
+      try {
+        await invalidRestTransport.generateContent({
+          apiKey: "valid-key",
+          model: "gemma-4-26b-a4b-it",
+          prompt: "Image",
+          imageBase64: "abc",
+          mimeType: "image/png",
+          options: { maxOutputTokens: 32, responseJsonSchema: pageJsonSchema },
+          request: { signal: new AbortController().signal, timeoutMs: 1000 },
+        });
+      } catch (error) {
+        assert.ok(error instanceof AIRequestInvalidError, "HTTP 400 requête invalide typée");
+        assert.equal(error.httpStatus, 400, "diagnostic httpStatus");
+        assert.equal(error.details.providerStatus, "INVALID_ARGUMENT", "diagnostic providerStatus");
+        assert.equal(error.details.providerReason, "BAD_REQUEST", "diagnostic providerReason");
+        assert.equal(error.details.providerField, "generation_config.response_format", "diagnostic providerField");
+        assert.equal(error.details.generationConfigKeys, "temperature,maxOutputTokens,thinkingConfig,responseMimeType,responseJsonSchema", "diagnostic clés generationConfig uniquement");
+        assert.doesNotMatch(JSON.stringify(error.details), /valid-key|abc|Image|detectedTitle|properties|sensitive-schema-value/, "diagnostic HTTP 400 sans secret ni schéma complet");
+        throw error;
+      }
+    },
+    AIRequestInvalidError,
+    "HTTP 400 conserve un diagnostic sûr",
+  );
+  assert.equal(JSON.stringify(invalidRequestBody).includes("responseFormat"), false, "requête invalide testée sans responseFormat");
 
   transport.response = { text: "OK", finishReason: "STOP", tokenUsage: null };
   const testSuccess = await service.testGeminiConfiguration();

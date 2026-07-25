@@ -6,6 +6,7 @@ import {
   AIModelNotFoundError,
   AINetworkError,
   AIProviderUnavailableError,
+  AIRequestInvalidError,
   AIRateLimitError,
   AISchemaValidationError,
   AITimeoutError,
@@ -29,6 +30,7 @@ import {
   CoursePageAnalysisKeyMissingError,
   CoursePageAnalysisModelError,
   CoursePageAnalysisProviderError,
+  CoursePageAnalysisProviderRequestInvalidError,
   CoursePageAnalysisQuotaError,
   CoursePageAnalysisSchemaError,
   CoursePageAnalysisTimeoutError,
@@ -66,6 +68,9 @@ function mapAnalysisError(error: unknown) {
   }
   if (error instanceof AIModelNotFoundError) {
     return new CoursePageAnalysisModelError(undefined, error);
+  }
+  if (error instanceof AIRequestInvalidError) {
+    return new CoursePageAnalysisProviderRequestInvalidError(undefined, error);
   }
   if (isMissingKeyError(error)) {
     return new CoursePageAnalysisKeyMissingError(undefined, error);
