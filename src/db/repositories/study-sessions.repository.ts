@@ -29,6 +29,10 @@ async function findActiveByCourse(courseId: string): Promise<StudySession | null
   );
 }
 
+async function findActive(): Promise<StudySession[]> {
+  return db.select().from(studySessions).where(eq(studySessions.status, "active")).all();
+}
+
 async function create(input: CreateStudySessionInput): Promise<StudySession> {
   validateSessionInput(input);
   return db.transaction((tx) => {
@@ -103,6 +107,7 @@ async function abandon(id: string, durationSeconds: number): Promise<StudySessio
 
 export const studySessionsRepository = {
   findById,
+  findActive,
   findActiveByCourse,
   create,
   updateCurrentExerciseIndex,

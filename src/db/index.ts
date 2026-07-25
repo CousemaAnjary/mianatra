@@ -91,6 +91,7 @@ export type {
   SessionReport,
   StudySession,
   StudySessionStatus,
+  StudySessionType,
   Subject,
   UserProfile,
 } from "./types";
