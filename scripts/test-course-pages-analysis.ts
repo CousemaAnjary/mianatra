@@ -4,7 +4,9 @@ import { join } from "node:path";
 import {
   AllCoursePagesAnalysisFailedError,
   CoursePageAnalysisKeyInvalidError,
+  CoursePageAnalysisJsonError,
   CoursePageAnalysisProviderError,
+  CoursePageAnalysisSchemaError,
   CoursePageAnalysisTimeoutError,
   DuplicatePageIndexError,
   analyzeCoursePages,
@@ -179,6 +181,18 @@ async function main() {
   });
   await assert.rejects(() => analyzeCoursePages(input([page(0)]), { analyzeSinglePage: noRetry.analyzeSinglePage }), AllCoursePagesAnalysisFailedError, "aucun retry sur clé invalide");
   assert.equal(noRetry.attempts.get(0), 1, "clé invalide tentée une fois");
+
+  const noRetryJson = scriptedAnalyzer({
+    0: new CoursePageAnalysisJsonError(),
+  });
+  await assert.rejects(() => analyzeCoursePages(input([page(0)]), { analyzeSinglePage: noRetryJson.analyzeSinglePage }), AllCoursePagesAnalysisFailedError, "aucun retry sur JSON invalide");
+  assert.equal(noRetryJson.attempts.get(0), 1, "JSON invalide tenté une fois");
+
+  const noRetrySchema = scriptedAnalyzer({
+    0: new CoursePageAnalysisSchemaError(),
+  });
+  await assert.rejects(() => analyzeCoursePages(input([page(0)]), { analyzeSinglePage: noRetrySchema.analyzeSinglePage }), AllCoursePagesAnalysisFailedError, "aucun retry sur sortie Zod invalide");
+  assert.equal(noRetrySchema.attempts.get(0), 1, "sortie Zod invalide tentée une fois");
 
   const twoAttempts = scriptedAnalyzer({
     0: [new CoursePageAnalysisProviderError(), new CoursePageAnalysisTimeoutError(), analysis()],

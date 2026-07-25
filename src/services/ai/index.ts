@@ -1,4 +1,5 @@
 export { AIService } from "./ai.service";
+export { extractJsonValue } from "./json-response";
 export type { AIProvider } from "./ai-provider.interface";
 export {
   AIAuthenticationError,
@@ -6,6 +7,7 @@ export {
   AIError,
   AIInvalidResponseError,
   AIJsonParseError,
+  AIJsonTruncatedError,
   AIModelNotFoundError,
   AINetworkError,
   AIProviderUnavailableError,
@@ -30,6 +32,7 @@ export type {
   AITextInput,
   AITextResponse,
   AITokenUsage,
+  AIResponseDiagnostics,
   GemmaModel,
 } from "./ai.types";
 export { GeminiMobileProvider } from "./providers/gemini-mobile.provider";

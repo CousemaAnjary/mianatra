@@ -6,7 +6,7 @@ import {
   AIProviderUnavailableError,
   AIRateLimitError,
 } from "../ai.errors";
-import type { AIGenerationOptions, AITokenUsage } from "../ai.types";
+import type { AIGenerationOptions, AIResponseDiagnostics, AITokenUsage } from "../ai.types";
 
 export type GeminiFetch = typeof fetch;
 
@@ -28,6 +28,7 @@ export type GeminiGenerateResponse = {
   text: string;
   finishReason: string | null;
   tokenUsage: AITokenUsage | null;
+  diagnostics?: AIResponseDiagnostics | null;
 };
 
 export interface GeminiMobileTransport {
@@ -47,37 +48,91 @@ function buildPrompt(params: GeminiGenerateParams) {
   return [params.context?.trim(), params.prompt.trim()].filter(Boolean).join("\n\n");
 }
 
-function extractText(response: unknown) {
+function readCandidates(response: unknown): unknown[] {
   if (typeof response !== "object" || response === null) {
-    return "";
+    return [];
   }
   const candidates = "candidates" in response ? response.candidates : null;
   if (!Array.isArray(candidates)) {
-    return "";
+    return [];
   }
-  return candidates
-    .flatMap((candidate) => {
-      if (typeof candidate !== "object" || candidate === null || !("content" in candidate)) {
-        return [];
-      }
-      const content = candidate.content;
-      if (typeof content !== "object" || content === null || !("parts" in content) || !Array.isArray(content.parts)) {
-        return [];
-      }
-      return content.parts.map((part: unknown) => (typeof part === "object" && part !== null && "text" in part && typeof part.text === "string" ? part.text : ""));
-    })
+  return candidates;
+}
+
+function readParts(candidate: unknown): unknown[] {
+  if (typeof candidate !== "object" || candidate === null || !("content" in candidate)) {
+    return [];
+  }
+  const content = candidate.content;
+  if (typeof content !== "object" || content === null || !("parts" in content) || !Array.isArray(content.parts)) {
+    return [];
+  }
+  return content.parts;
+}
+
+function isThoughtPart(part: unknown) {
+  return typeof part === "object" && part !== null && "thought" in part && part.thought === true;
+}
+
+function partText(part: unknown) {
+  return typeof part === "object" && part !== null && "text" in part && typeof part.text === "string" ? part.text : "";
+}
+
+function extractText(response: unknown) {
+  return readCandidates(response)
+    .flatMap((candidate) => readParts(candidate))
+    .filter((part) => !isThoughtPart(part))
+    .map(partText)
     .join("")
     .trim();
 }
 
 function extractFinishReason(response: unknown) {
-  if (typeof response !== "object" || response === null || !("candidates" in response) || !Array.isArray(response.candidates)) {
-    return null;
-  }
-  const candidate = response.candidates[0];
+  const candidate = readCandidates(response)[0];
   return typeof candidate === "object" && candidate !== null && "finishReason" in candidate && typeof candidate.finishReason === "string"
     ? candidate.finishReason
     : null;
+}
+
+function textEdge(value: string, edge: "first" | "last") {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return edge === "first" ? trimmed[0] : trimmed[trimmed.length - 1];
+}
+
+function extractDiagnostics(response: unknown, text: string): AIResponseDiagnostics {
+  const candidates = readCandidates(response);
+  const parts = candidates.flatMap((candidate) => readParts(candidate));
+  const tokenUsage = extractTokenUsage(response);
+  const finishReason = extractFinishReason(response);
+  const trimmed = text.trimStart();
+  return {
+    candidateCount: candidates.length,
+    partCount: parts.length,
+    thoughtPartCount: parts.filter(isThoughtPart).length,
+    responseTextLength: text.length,
+    startsWithCodeFence: trimmed.startsWith("```"),
+    firstNonWhitespaceCharacter: textEdge(text, "first"),
+    lastNonWhitespaceCharacter: textEdge(text, "last"),
+    finishReason,
+    outputTokenCount: tokenUsage?.outputTokens ?? null,
+  };
+}
+
+function diagnosticsDetails(diagnostics: AIResponseDiagnostics) {
+  return {
+    candidateCount: diagnostics.candidateCount,
+    partCount: diagnostics.partCount,
+    thoughtPartCount: diagnostics.thoughtPartCount,
+    responseTextLength: diagnostics.responseTextLength,
+    startsWithCodeFence: diagnostics.startsWithCodeFence,
+    firstNonWhitespaceCharacter: diagnostics.firstNonWhitespaceCharacter,
+    lastNonWhitespaceCharacter: diagnostics.lastNonWhitespaceCharacter,
+    finishReason: diagnostics.finishReason,
+    outputTokenCount: diagnostics.outputTokenCount,
+  };
 }
 
 function extractTokenUsage(response: unknown): AITokenUsage | null {
@@ -145,6 +200,10 @@ export class GeminiRestTransport implements GeminiMobileTransport {
           generationConfig: {
             temperature: params.options?.temperature ?? 0.2,
             maxOutputTokens: params.options?.maxOutputTokens,
+            responseMimeType: "application/json",
+            thinkingConfig: {
+              thinkingLevel: "minimal",
+            },
           },
           systemInstruction: params.options?.systemInstruction ? { parts: [{ text: params.options.systemInstruction }] } : undefined,
         }),
@@ -159,13 +218,15 @@ export class GeminiRestTransport implements GeminiMobileTransport {
       throw mapHttpError(response.status, body);
     }
     const outputText = extractText(body);
+    const diagnostics = extractDiagnostics(body, outputText);
     if (!outputText) {
-      throw new AIInvalidResponseError("Gemini returned an empty response.");
+      throw new AIInvalidResponseError("Gemini returned an empty response.", { details: diagnosticsDetails(diagnostics) });
     }
     return {
       text: outputText,
-      finishReason: extractFinishReason(body),
+      finishReason: diagnostics.finishReason,
       tokenUsage: extractTokenUsage(body),
+      diagnostics,
     };
   }
 }

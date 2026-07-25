@@ -113,7 +113,12 @@ function userMessage(error: unknown) {
     if (codes.has("COURSE_ANALYSIS_TIMEOUT")) {
       return "La demande IA a expiré. Réessaie.";
     }
-    if (codes.has("COURSE_ANALYSIS_PROVIDER_UNAVAILABLE") || codes.has("COURSE_ANALYSIS_JSON_INVALID") || codes.has("COURSE_ANALYSIS_SCHEMA_INVALID")) {
+    if (
+      codes.has("COURSE_ANALYSIS_PROVIDER_UNAVAILABLE") ||
+      codes.has("COURSE_ANALYSIS_JSON_INVALID") ||
+      codes.has("COURSE_ANALYSIS_JSON_TRUNCATED") ||
+      codes.has("COURSE_ANALYSIS_SCHEMA_INVALID")
+    ) {
       return "L'analyse IA a échoué. Réessaie avec une image plus nette ou relance plus tard.";
     }
     return "Toutes les pages sont illisibles ou n'ont pas pu être analysées.";

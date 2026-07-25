@@ -43,6 +43,7 @@ export {
   CoursePageAnalysisImageError,
   CoursePageAnalysisInputError,
   CoursePageAnalysisJsonError,
+  CoursePageAnalysisJsonTruncatedError,
   CoursePageAnalysisKeyInvalidError,
   CoursePageAnalysisKeyMissingError,
   CoursePageAnalysisModelError,

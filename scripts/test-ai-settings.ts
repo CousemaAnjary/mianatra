@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 import {
   AIAuthenticationError,
+  AIJsonParseError,
+  AIJsonTruncatedError,
   AINetworkError,
   AIRateLimitError,
+  AISchemaValidationError,
   AITimeoutError,
+  AIService,
   GeminiMobileProvider,
+  GeminiRestTransport,
+  extractJsonValue,
   type GeminiGenerateParams,
   type GeminiGenerateResponse,
   type GeminiMobileTransport,
@@ -119,6 +126,72 @@ async function main() {
   const imageProvider = new GeminiMobileProvider({ apiKey: "valid-key", model: "gemma-4-26b-a4b-it", transport });
   await imageProvider.generateFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" });
   assert.equal(transport.calls.at(-1)?.imageBase64, "abc", "image base64 transmise");
+  assert.equal(transport.calls.at(-1)?.options?.thinkingLevel, "minimal", "thinking minimal transmis au transport");
+
+  assert.deepEqual(extractJsonValue("{\"ok\":true}"), { ok: true }, "réponse JSON brute valide");
+  assert.deepEqual(extractJsonValue("```json\n{\"ok\":true}\n```"), { ok: true }, "JSON dans bloc Markdown");
+  assert.deepEqual(extractJsonValue("Voici le résultat: {\"ok\":true} fin."), { ok: true }, "texte autour d'un unique objet JSON équilibré");
+  assert.throws(() => extractJsonValue("{\"ok\":true"), AIJsonTruncatedError, "JSON tronqué rejeté sans réparation");
+  assert.throws(() => extractJsonValue("{ invalid }"), AIJsonParseError, "JSON syntaxiquement invalide distingué");
+
+  transport.response = { text: "{\"ok\":true}", finishReason: "STOP", tokenUsage: null };
+  const structuredService = new AIService(imageProvider);
+  assert.equal(
+    (await structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, z.object({ ok: z.boolean() }))).ok,
+    true,
+    "sortie structurée image valide",
+  );
+  transport.response = { text: "{\"ok\":\"bad\"}", finishReason: "STOP", tokenUsage: null };
+  await assert.rejects(
+    () => structuredService.generateStructuredFromImage({ prompt: "Image", imageBase64: "abc", mimeType: "image/png" }, z.object({ ok: z.boolean() })),
+    AISchemaValidationError,
+    "sortie Zod invalide distinguée",
+  );
+
+  let capturedRequestBody: unknown = null;
+  const restTransport = new GeminiRestTransport({
+    fetchFn: async (_url, init) => {
+      capturedRequestBody = JSON.parse(String(init?.body));
+      return new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              finishReason: "STOP",
+              content: {
+                parts: [
+                  { text: "raisonnement interne", thought: true },
+                  { text: "{\"ok\":true}" },
+                ],
+              },
+            },
+          ],
+          usageMetadata: { candidatesTokenCount: 12, promptTokenCount: 4, totalTokenCount: 16 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    },
+  });
+  const restResponse = await restTransport.generateContent({
+    apiKey: "valid-key",
+    model: "gemma-4-26b-a4b-it",
+    prompt: "Image",
+    imageBase64: "abc",
+    mimeType: "image/png",
+    options: { maxOutputTokens: 32 },
+    request: { signal: new AbortController().signal, timeoutMs: 1000 },
+  });
+  assert.equal(restResponse.text, "{\"ok\":true}", "partie de réflexion ignorée");
+  assert.equal(restResponse.diagnostics?.candidateCount, 1, "diagnostic candidateCount");
+  assert.equal(restResponse.diagnostics?.partCount, 2, "diagnostic partCount");
+  assert.equal(restResponse.diagnostics?.thoughtPartCount, 1, "diagnostic thoughtPartCount");
+  assert.equal(restResponse.diagnostics?.responseTextLength, 11, "diagnostic responseTextLength");
+  assert.equal(restResponse.diagnostics?.firstNonWhitespaceCharacter, "{", "diagnostic premier caractère");
+  assert.equal(restResponse.diagnostics?.lastNonWhitespaceCharacter, "}", "diagnostic dernier caractère");
+  assert.equal(restResponse.diagnostics?.outputTokenCount, 12, "diagnostic outputTokenCount");
+  assert.notEqual(capturedRequestBody, null, "requête REST capturée");
+  const generationConfig = (capturedRequestBody as { generationConfig?: Record<string, unknown> }).generationConfig;
+  assert.equal(generationConfig?.responseMimeType, "application/json", "responseMimeType application/json envoyé");
+  assert.deepEqual(generationConfig?.thinkingConfig, { thinkingLevel: "minimal" }, "thinkingLevel minimal envoyé");
 
   transport.response = { text: "OK", finishReason: "STOP", tokenUsage: null };
   const testSuccess = await service.testGeminiConfiguration();

@@ -1,9 +1,11 @@
 import { z } from "zod";
+import { AIError } from "@/src/services/ai";
 import {
   CoursePageAnalysisError,
   CoursePageAnalysisImageError,
   CoursePageAnalysisInputError,
   CoursePageAnalysisJsonError,
+  CoursePageAnalysisJsonTruncatedError,
   CoursePageAnalysisKeyInvalidError,
   CoursePageAnalysisKeyMissingError,
   CoursePageAnalysisModelError,
@@ -20,6 +22,14 @@ import type { AnalyzeSinglePage, PageAnalysisResult } from "../types/multi-page-
 export type AnalyzeCoursePagesDependencies = {
   analyzeSinglePage: AnalyzeSinglePage;
   onPageDone?: (result: PageAnalysisResult) => void;
+  onPageAttempt?: (input: { pageIndex: number; attemptNumber: number; maxAttempts: number; retryReason?: string | null }) => void;
+  onPageAttemptDone?: (input: {
+    pageIndex: number;
+    attemptNumber: number;
+    durationMs: number;
+    errorCode: string | null;
+    httpStatus: number | null;
+  }) => void;
 };
 
 export class NoCoursePagesProvidedError extends Error {
@@ -100,11 +110,18 @@ function safeErrorMessage(error: unknown) {
 }
 
 function isTemporary(error: unknown) {
+  if (error instanceof CoursePageAnalysisProviderError) {
+    const cause = error.cause;
+    if (cause instanceof AIError && cause.httpStatus !== null && cause.httpStatus < 500) {
+      return false;
+    }
+    if (cause instanceof AIError && cause.httpStatus !== null && cause.httpStatus >= 500) {
+      return true;
+    }
+  }
   return (
     error instanceof CoursePageAnalysisTimeoutError ||
-    error instanceof CoursePageAnalysisProviderError ||
-    error instanceof CoursePageAnalysisJsonError ||
-    error instanceof CoursePageAnalysisSchemaError
+    error instanceof CoursePageAnalysisProviderError
   );
 }
 
@@ -118,33 +135,78 @@ function shouldRetry(error: unknown, attemptsCount: number) {
     error instanceof CoursePageAnalysisQuotaError ||
     error instanceof CoursePageAnalysisModelError ||
     error instanceof CoursePageAnalysisImageError ||
-    error instanceof CoursePageAnalysisInputError
+    error instanceof CoursePageAnalysisInputError ||
+    error instanceof CoursePageAnalysisJsonError ||
+    error instanceof CoursePageAnalysisJsonTruncatedError ||
+    error instanceof CoursePageAnalysisSchemaError
   ) {
     return false;
   }
   return isTemporary(error);
 }
 
-async function analyzePage(input: CoursePageAnalysisInput, pageId: string | null, analyzeSinglePage: AnalyzeSinglePage): Promise<PageAnalysisResult> {
+function nowMs() {
+  return globalThis.performance?.now?.() ?? Date.now();
+}
+
+function httpStatus(error: unknown) {
+  if (error instanceof CoursePageAnalysisError && error.cause instanceof AIError) {
+    return error.cause.httpStatus;
+  }
+  return error instanceof AIError ? error.httpStatus : null;
+}
+
+async function delayRetry() {
+  await new Promise((resolve) => setTimeout(resolve, 150));
+}
+
+async function analyzePage(
+  input: CoursePageAnalysisInput,
+  pageId: string | null,
+  dependencies: AnalyzeCoursePagesDependencies,
+): Promise<PageAnalysisResult> {
   let attemptsCount = 0;
   let lastError: unknown = null;
   while (attemptsCount < 2) {
     attemptsCount += 1;
+    dependencies.onPageAttempt?.({
+      pageIndex: input.pageIndex,
+      attemptNumber: attemptsCount,
+      maxAttempts: 2,
+      retryReason: lastError ? errorCode(lastError) : null,
+    });
+    const startedAt = nowMs();
     try {
+      const analysis = await dependencies.analyzeSinglePage(input);
+      dependencies.onPageAttemptDone?.({
+        pageIndex: input.pageIndex,
+        attemptNumber: attemptsCount,
+        durationMs: Math.round(nowMs() - startedAt),
+        errorCode: null,
+        httpStatus: null,
+      });
       return {
         pageId,
         pageIndex: input.pageIndex,
         status: "success",
-        analysis: await analyzeSinglePage(input),
+        analysis,
         errorCode: null,
         errorMessage: null,
         attemptsCount,
       };
     } catch (error) {
       lastError = error;
+      dependencies.onPageAttemptDone?.({
+        pageIndex: input.pageIndex,
+        attemptNumber: attemptsCount,
+        durationMs: Math.round(nowMs() - startedAt),
+        errorCode: errorCode(error),
+        httpStatus: httpStatus(error),
+      });
       if (!shouldRetry(error, attemptsCount)) {
         break;
       }
+      await delayRetry();
     }
   }
   return {
@@ -175,7 +237,7 @@ export async function analyzeCoursePages(
       knownGrade: parsed.knownGrade,
       additionalInstructions: parsed.additionalInstructions,
     };
-    const result = await analyzePage(pageInput, page.pageId ?? null, dependencies.analyzeSinglePage);
+    const result = await analyzePage(pageInput, page.pageId ?? null, dependencies);
     pageResults.push(result);
     dependencies.onPageDone?.(result);
   }

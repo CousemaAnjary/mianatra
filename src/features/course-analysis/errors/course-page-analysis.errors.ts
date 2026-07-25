@@ -9,6 +9,7 @@ export type CoursePageAnalysisErrorCode =
   | "COURSE_ANALYSIS_KEY_INVALID"
   | "COURSE_ANALYSIS_MODEL_UNAVAILABLE"
   | "COURSE_ANALYSIS_JSON_INVALID"
+  | "COURSE_ANALYSIS_JSON_TRUNCATED"
   | "COURSE_ANALYSIS_SCHEMA_INVALID";
 
 export class CoursePageAnalysisError extends Error {
@@ -79,6 +80,12 @@ export class CoursePageAnalysisModelError extends CoursePageAnalysisError {
 export class CoursePageAnalysisJsonError extends CoursePageAnalysisError {
   constructor(message = "Course page analysis response is not valid JSON.", cause?: unknown) {
     super("COURSE_ANALYSIS_JSON_INVALID", message, { cause });
+  }
+}
+
+export class CoursePageAnalysisJsonTruncatedError extends CoursePageAnalysisError {
+  constructor(message = "Course page analysis response JSON is truncated.", cause?: unknown) {
+    super("COURSE_ANALYSIS_JSON_TRUNCATED", message, { cause });
   }
 }
 

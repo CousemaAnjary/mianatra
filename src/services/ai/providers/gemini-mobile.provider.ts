@@ -19,6 +19,7 @@ import {
   type AILogger,
   type AIProviderStatus,
   type AIRequestOptions,
+  type AIResponseDiagnostics,
   type AITextInput,
   type AITextResponse,
   type GemmaModel,
@@ -33,7 +34,7 @@ const textInputSchema = z.object({
       temperature: z.number().min(0).max(2).optional(),
       maxOutputTokens: z.number().int().positive().optional(),
       systemInstruction: z.string().trim().nullable().optional(),
-      thinkingLevel: z.enum(["low", "medium", "high"]).nullable().optional(),
+      thinkingLevel: z.enum(["minimal", "low", "medium", "high"]).nullable().optional(),
     })
     .nullable()
     .optional(),
@@ -100,6 +101,30 @@ function linkSignals(externalSignal: AbortSignal | undefined, internalController
   const abort = () => internalController.abort();
   externalSignal.addEventListener("abort", abort, { once: true });
   return () => externalSignal.removeEventListener("abort", abort);
+}
+
+function diagnosticsFromError(error: AIError): AIResponseDiagnostics | null {
+  const details = error.details;
+  if (
+    typeof details.candidateCount === "number" &&
+    typeof details.partCount === "number" &&
+    typeof details.thoughtPartCount === "number" &&
+    typeof details.responseTextLength === "number" &&
+    typeof details.startsWithCodeFence === "boolean"
+  ) {
+    return {
+      candidateCount: details.candidateCount,
+      partCount: details.partCount,
+      thoughtPartCount: details.thoughtPartCount,
+      responseTextLength: details.responseTextLength,
+      startsWithCodeFence: details.startsWithCodeFence,
+      firstNonWhitespaceCharacter: typeof details.firstNonWhitespaceCharacter === "string" ? details.firstNonWhitespaceCharacter : null,
+      lastNonWhitespaceCharacter: typeof details.lastNonWhitespaceCharacter === "string" ? details.lastNonWhitespaceCharacter : null,
+      finishReason: typeof details.finishReason === "string" ? details.finishReason : null,
+      outputTokenCount: typeof details.outputTokenCount === "number" ? details.outputTokenCount : null,
+    };
+  }
+  return null;
 }
 
 export class GeminiMobileProvider implements AIProvider {
@@ -179,7 +204,7 @@ export class GeminiMobileProvider implements AIProvider {
             temperature: input.options?.temperature ?? 0.2,
             maxOutputTokens: input.options?.maxOutputTokens ?? DEFAULT_GEMINI_MAX_OUTPUT_TOKENS,
             systemInstruction: input.options?.systemInstruction ?? null,
-            thinkingLevel: input.options?.thinkingLevel ?? "low",
+            thinkingLevel: input.options?.thinkingLevel ?? "minimal",
           },
           request: { signal, timeoutMs },
         }),
@@ -189,7 +214,7 @@ export class GeminiMobileProvider implements AIProvider {
         throw new AIInvalidResponseError("AI provider returned an empty text response.", { requestId });
       }
       const durationMs = Date.now() - startedAt;
-      this.logger.info({ requestId, operation, provider: this.name, model: this.model, durationMs, success: true, errorCode: null });
+      this.logger.info({ requestId, operation, provider: this.name, model: this.model, durationMs, success: true, errorCode: null, diagnostics: response.diagnostics });
       return {
         text,
         provider: this.name,
@@ -198,6 +223,7 @@ export class GeminiMobileProvider implements AIProvider {
         durationMs,
         finishReason: response.finishReason,
         tokenUsage: response.tokenUsage,
+        diagnostics: response.diagnostics,
       };
     } catch (error) {
       const mapped = mapProviderError(error, requestId);
@@ -209,6 +235,7 @@ export class GeminiMobileProvider implements AIProvider {
         durationMs: Date.now() - startedAt,
         success: false,
         errorCode: mapped.code,
+        diagnostics: diagnosticsFromError(mapped),
       });
       throw mapped;
     }

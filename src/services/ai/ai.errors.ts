@@ -83,6 +83,12 @@ export class AIJsonParseError extends AIError {
   }
 }
 
+export class AIJsonTruncatedError extends AIError {
+  constructor(message = "AI response JSON is truncated.", options?: AIErrorOptions) {
+    super("AI_JSON_TRUNCATED_ERROR", message, options);
+  }
+}
+
 export class AISchemaValidationError extends AIError {
   constructor(message = "AI response JSON does not match the schema.", options?: AIErrorOptions) {
     super("AI_SCHEMA_VALIDATION_ERROR", message, options);

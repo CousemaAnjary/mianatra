@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   AIAuthenticationError,
   AIJsonParseError,
+  AIJsonTruncatedError,
   AIModelNotFoundError,
   AINetworkError,
   AIProviderUnavailableError,
@@ -23,6 +24,7 @@ import {
   CoursePageAnalysisImageError,
   CoursePageAnalysisInputError,
   CoursePageAnalysisJsonError,
+  CoursePageAnalysisJsonTruncatedError,
   CoursePageAnalysisKeyInvalidError,
   CoursePageAnalysisKeyMissingError,
   CoursePageAnalysisModelError,
@@ -46,6 +48,9 @@ function mapAnalysisError(error: unknown) {
   }
   if (error instanceof AIJsonParseError) {
     return new CoursePageAnalysisJsonError(undefined, error);
+  }
+  if (error instanceof AIJsonTruncatedError) {
+    return new CoursePageAnalysisJsonTruncatedError(undefined, error);
   }
   if (error instanceof AISchemaValidationError) {
     return new CoursePageAnalysisSchemaError(undefined, error);
@@ -117,7 +122,7 @@ export async function analyzeCoursePage(
         context: null,
         options: {
           temperature: 0.1,
-          maxOutputTokens: 1800,
+          maxOutputTokens: 1200,
           systemInstruction: "Tu es un assistant pedagogique. Analyse seulement l'image fournie et retourne du JSON strict.",
         },
       },

@@ -4,7 +4,7 @@ export const DEFAULT_GEMINI_TIMEOUT_MS = 30000;
 export const DEFAULT_GEMINI_MAX_OUTPUT_TOKENS = 1024;
 
 export type GemmaModel = (typeof ALLOWED_GEMMA_MODELS)[number];
-export type AIThinkingLevel = "low" | "medium" | "high";
+export type AIThinkingLevel = "minimal" | "low" | "medium" | "high";
 
 export type AIRequestOptions = {
   signal?: AbortSignal;
@@ -50,6 +50,18 @@ export type AITokenUsage = {
   totalTokens?: number | null;
 };
 
+export type AIResponseDiagnostics = {
+  candidateCount: number;
+  partCount: number;
+  thoughtPartCount: number;
+  responseTextLength: number;
+  startsWithCodeFence: boolean;
+  firstNonWhitespaceCharacter: string | null;
+  lastNonWhitespaceCharacter: string | null;
+  finishReason: string | null;
+  outputTokenCount: number | null;
+};
+
 export type AITextResponse = {
   text: string;
   provider: string;
@@ -58,6 +70,7 @@ export type AITextResponse = {
   durationMs: number;
   finishReason: string | null;
   tokenUsage: AITokenUsage | null;
+  diagnostics?: AIResponseDiagnostics | null;
 };
 
 export type AILogEvent = {
@@ -68,6 +81,7 @@ export type AILogEvent = {
   durationMs: number | null;
   success: boolean;
   errorCode: string | null;
+  diagnostics?: AIResponseDiagnostics | null;
 };
 
 export type AILogger = {
