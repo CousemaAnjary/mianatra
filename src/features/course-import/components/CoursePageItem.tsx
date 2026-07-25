@@ -1,18 +1,16 @@
-import { Image, Pressable, View, type ImageSourcePropType } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import type { DemoCoursePage } from "@/src/data/demo-data";
 import { AppText } from "@/src/components/shared";
 import { colors } from "@/src/theme";
 
-const pageImages: Record<DemoCoursePage["assetName"], ImageSourcePropType> = {
-  sample_course_page_1: require("../../../../assets/mianatra/sample_course_page_1.png"),
-  sample_course_page_2: require("../../../../assets/mianatra/sample_course_page_2.png"),
-  sample_course_page_3: require("../../../../assets/mianatra/sample_course_page_3.png"),
-  sample_course_page_4: require("../../../../assets/mianatra/sample_course_page_4.png"),
+export type DisplayCoursePage = {
+  id: string;
+  sourceUri: string;
+  fileName?: string;
 };
 
 type CoursePageItemProps = {
-  page: DemoCoursePage;
+  page: DisplayCoursePage;
   index: number;
   canMoveLeft: boolean;
   canMoveRight: boolean;
@@ -35,8 +33,8 @@ export function CoursePageItem({
   return (
     <View className="aspect-[3/4] flex-1 overflow-hidden rounded-2xl border border-[#E8D9C7] bg-[#FAF1E2]">
       <Image
-        source={pageImages[page.assetName]}
-        accessibilityLabel={`${page.accessibilityLabel}, position ${pageNumber}`}
+        source={{ uri: page.sourceUri }}
+        accessibilityLabel={`Page ${pageNumber}${page.fileName ? `, ${page.fileName}` : ""}`}
         accessibilityIgnoresInvertColors
         resizeMode="cover"
         className="h-full w-full"

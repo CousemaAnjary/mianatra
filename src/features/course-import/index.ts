@@ -4,6 +4,8 @@ export {
   courseImportService,
   createCourseFromPages,
   createCourseImportService,
+  getCourseImportDefaults,
+  getOrCreateCourseImportSubject,
   markPageQuality,
   normalizeRotation,
   removePage,
@@ -11,3 +13,20 @@ export {
   rotatePage,
 } from "./services/course-import.service";
 export type { CourseFromPagesInput, ImportPageInput } from "./services/course-import.service";
+export {
+  GalleryImportError,
+  MAX_GALLERY_COURSE_PAGES,
+  createGalleryImportService,
+  moveSelectedCoursePage,
+  normalizeSelectedCoursePages,
+  prepareSelectedCoursePages,
+  removeSelectedCoursePage,
+} from "./services/gallery-import.service";
+export type {
+  GalleryFileGateway,
+  GalleryPickerGateway,
+  PickGalleryImagesResult,
+  PickedGalleryAsset,
+  SelectedCoursePage,
+  SupportedCourseImageMimeType,
+} from "./services/gallery-import.service";

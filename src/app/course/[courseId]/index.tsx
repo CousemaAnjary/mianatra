@@ -1,4 +1,5 @@
 import { Alert, Image, Pressable, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import {
@@ -6,6 +7,7 @@ import {
   AppCard,
   AppScreen,
   AppText,
+  ProgressBar,
 } from "@/src/components/shared";
 import {
   CourseActionTabs,
@@ -13,6 +15,8 @@ import {
   CourseSummary,
   CourseTopBar,
 } from "@/src/features/courses/components";
+import { useCourseProcessing } from "@/src/features/course-processing";
+import { countRealCourseExercises, startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
 import { colors } from "@/src/theme";
 
@@ -20,9 +24,95 @@ export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
 }
 
+type CoursePrimaryAction = {
+  title: string;
+  iconName: React.ComponentProps<typeof FontAwesome5>["name"];
+  onPress: () => void | Promise<void>;
+};
+
 export default function CourseDetailScreen() {
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
-  const course = demoCourses.find((demoItem) => demoItem.id === courseId);
+  const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
+  const processing = useCourseProcessing(resolvedCourseId);
+  const [realExerciseCount, setRealExerciseCount] = useState(0);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const demoCourse = demoCourses.find((demoItem) => demoItem.id === resolvedCourseId);
+  const realDetail = processing.detail;
+  const course = realDetail
+    ? {
+        id: realDetail.course.id,
+        title: realDetail.course.title,
+        subject: realDetail.subject?.name ?? "Cours",
+        pageCount: realDetail.pages.length,
+        progress: 0,
+        lastRevision: realDetail.course.lastReviewedAt ? "récente" : "jamais",
+        summary: realDetail.course.summary ? [realDetail.course.summary] : [],
+      }
+    : demoCourse;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!realDetail) {
+      setRealExerciseCount(0);
+      return;
+    }
+    countRealCourseExercises(realDetail.course.id).then((count) => {
+      if (!cancelled) {
+        setRealExerciseCount(count);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [realDetail, processing.result.exercises.length]);
+
+  const action = useMemo<CoursePrimaryAction>(() => {
+    if (!realDetail) {
+      return {
+        title: "Réviser le cours",
+        iconName: "file-alt" as const,
+        onPress: () =>
+          router.push({
+            pathname: "/course/[courseId]/revision-sheet",
+            params: { courseId: demoCourse?.id ?? "" },
+          }),
+      };
+    }
+    if (realDetail.course.status !== "ready" || !realDetail.latestAnalysis) {
+      return {
+        title: "Analyser le cours",
+        iconName: "magic" as const,
+        onPress: () => void processing.startProcessing?.()?.catch(() => undefined),
+      };
+    }
+    if (!realDetail.latestRevisionSheet && !processing.result.revisionSheet) {
+      return {
+        title: "Générer ma fiche",
+        iconName: "file-alt" as const,
+        onPress: () => void processing.generateAssetsFromPersisted?.()?.catch(() => undefined),
+      };
+    }
+    if (realExerciseCount === 0 && processing.result.exercises.length === 0) {
+      return {
+        title: "Générer les exercices",
+        iconName: "pen" as const,
+        onPress: () => void processing.generateAssetsFromPersisted?.()?.catch(() => undefined),
+      };
+    }
+    return {
+      title: "Commencer à réviser",
+      iconName: "play" as const,
+      onPress: async () => {
+        setSessionError(null);
+        const session = await startRealCourseSession(realDetail.course.id);
+        if (!session) {
+          setSessionError("Aucun exercice réel n'est disponible pour ce cours.");
+          return;
+        }
+        router.push({ pathname: "/session/[sessionId]", params: { sessionId: session.id } });
+      },
+    };
+  }, [demoCourse?.id, processing, realDetail, realExerciseCount]);
 
   if (!course) {
     return (
@@ -116,15 +206,54 @@ export default function CourseDetailScreen() {
 
       <CourseSummary items={summaryItems} />
 
+      {realDetail ? (
+        <AppCard className="gap-4">
+          <View className="gap-2">
+            <AppText variant="subtitle">Traitement du cours</AppText>
+            <AppText tone="secondary">{processing.progress.message}</AppText>
+          </View>
+          <ProgressBar value={processing.progress.percent} accessibilityLabel="Progression du traitement" />
+          {processing.progress.totalPages > 0 ? (
+            <AppText tone="secondary">
+              {processing.progress.currentPage} / {processing.progress.totalPages} pages
+            </AppText>
+          ) : null}
+          {processing.result.analysis ? (
+            <View className="gap-2">
+              <AppText variant="label">Analyse détectée</AppText>
+              <AppText tone="secondary">
+                {processing.result.analysis.detectedTitle} • {processing.result.analysis.detectedSubject} •{" "}
+                {processing.result.analysis.concepts.length} concept(s)
+              </AppText>
+              <AppText tone="secondary">{processing.result.analysis.summary}</AppText>
+              {processing.result.warnings.map((warning) => (
+                <AppText key={warning} tone="secondary">{warning}</AppText>
+              ))}
+              {processing.pendingAnalysis ? (
+                <AppButton
+                  title="Confirmer et continuer"
+                  iconName="check"
+                  loading={["persisting", "generating_sheet", "generating_exercises"].includes(processing.status)}
+                  onPress={() => void processing.confirmAndContinue?.()?.catch(() => undefined)}
+                />
+              ) : null}
+            </View>
+          ) : null}
+          {processing.error ? (
+            <View className="gap-3">
+              <AppText accessibilityRole="alert" tone="error">{processing.error}</AppText>
+              <AppButton title="Réessayer" iconName="redo" variant="secondary" onPress={() => void processing.retry?.()?.catch(() => undefined)} />
+            </View>
+          ) : null}
+          {sessionError ? <AppText tone="error">{sessionError}</AppText> : null}
+        </AppCard>
+      ) : null}
+
       <AppButton
-        title="Réviser le cours"
-        iconName="file-alt"
-        onPress={() =>
-          router.push({
-            pathname: "/course/[courseId]/revision-sheet",
-            params: { courseId: course.id },
-          })
-        }
+        title={action.title}
+        iconName={action.iconName}
+        loading={["analyzing", "persisting", "generating_sheet", "generating_exercises"].includes(processing.status)}
+        onPress={action.onPress}
       />
       <View className="flex-row gap-3">
         <Pressable

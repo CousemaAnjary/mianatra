@@ -145,6 +145,45 @@ async function getDeps(): Promise<CourseImportServiceDeps> {
   return { courses: repositories.coursesRepository, pages: repositories.pagesRepository, subjects: repositories.subjectsRepository };
 }
 
+export async function getCourseImportDefaults() {
+  const repositories = await import("@/src/db");
+  const subjects = await repositories.subjectsRepository.findAll();
+  return {
+    subject: subjects[0] ?? null,
+    subjectName: subjects[0]?.name ?? "SVT",
+    title: "Nouveau cours",
+    grade: "2nde",
+  };
+}
+
+export async function getOrCreateCourseImportSubject(name: string) {
+  const normalizedName = normalizeText(name);
+  if (!normalizedName) {
+    throw new SubjectNotFoundError();
+  }
+
+  const repositories = await import("@/src/db");
+  const existingSubject = await repositories.subjectsRepository.findByName(normalizedName);
+  if (existingSubject) {
+    return existingSubject;
+  }
+
+  try {
+    return await repositories.subjectsRepository.create({
+      name: normalizedName,
+      icon: "book",
+      color: "#D94B24",
+      isDefault: false,
+    });
+  } catch {
+    const subject = await repositories.subjectsRepository.findByName(normalizedName);
+    if (subject) {
+      return subject;
+    }
+    throw new SubjectNotFoundError();
+  }
+}
+
 export async function createCourseFromPages(input: CourseFromPagesInput) {
   return createCourseImportService(await getDeps()).createCourseFromPages(input);
 }
