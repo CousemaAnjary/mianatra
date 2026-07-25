@@ -12,6 +12,7 @@ import {
   type AnalyzeSinglePage,
   type CoursePageAnalysis,
 } from "../src/features/course-analysis";
+import { AIProviderUnavailableError } from "../src/services/ai";
 
 function page(pageIndex: number, input: Partial<AnalyzeCoursePagesInput["pages"][number]> = {}) {
   return {
@@ -152,13 +153,19 @@ async function main() {
     0: [new CoursePageAnalysisTimeoutError(), analysis()],
   });
   let doneCount = 0;
+  const retryAttempts: Array<{ pageIndex: number; attemptNumber: number; maxAttempts: number; retryReason?: string | null }> = [];
   const retryWithProgress = await analyzeCoursePages(input([page(0)]), {
     analyzeSinglePage: retry.analyzeSinglePage,
+    onPageAttempt: (attempt) => {
+      retryAttempts.push(attempt);
+    },
     onPageDone: () => {
       doneCount += 1;
     },
   });
   assert.equal(retryWithProgress.pageResults[0].attemptsCount, 2, "retry sur timeout avec progression");
+  assert.deepEqual(retryAttempts.map((attempt) => attempt.attemptNumber), [1, 2], "tentatives séparées de la progression page");
+  assert.equal(retryAttempts[1].retryReason, "COURSE_ANALYSIS_TIMEOUT", "raison de retry exposée sans payload sensible");
   assert.equal(doneCount, 1, "progression notifiée une seule fois par page malgré le retry");
 
   const retryWithoutProgress = scriptedAnalyzer({
@@ -178,6 +185,24 @@ async function main() {
   });
   await assert.rejects(() => analyzeCoursePages(input([page(0)]), { analyzeSinglePage: twoAttempts.analyzeSinglePage }), AllCoursePagesAnalysisFailedError, "maximum deux essais");
   assert.equal(twoAttempts.attempts.get(0), 2, "maximum deux essais par page");
+
+  const httpClientError = scriptedAnalyzer({
+    0: new CoursePageAnalysisProviderError(undefined, new AIProviderUnavailableError("Bad request", { httpStatus: 400 })),
+  });
+  const httpAttempts: Array<{ errorCode: string | null; httpStatus: number | null }> = [];
+  await assert.rejects(
+    () =>
+      analyzeCoursePages(input([page(0)]), {
+        analyzeSinglePage: httpClientError.analyzeSinglePage,
+        onPageAttemptDone: (attempt) => {
+          httpAttempts.push({ errorCode: attempt.errorCode, httpStatus: attempt.httpStatus });
+        },
+      }),
+    AllCoursePagesAnalysisFailedError,
+    "erreur HTTP 4xx non retry",
+  );
+  assert.equal(httpClientError.attempts.get(0), 1, "pas de retry inutile sur erreur HTTP client");
+  assert.deepEqual(httpAttempts, [{ errorCode: "COURSE_ANALYSIS_PROVIDER_UNAVAILABLE", httpStatus: 400 }], "statut HTTP catégorisé");
 
   const featureFiles = walkFiles(join(process.cwd(), "src", "features", "course-analysis")).filter((file) => /\.(ts|tsx)$/.test(file));
   const featureContent = featureFiles.map((file) => readFileSync(file, "utf8")).join("\n");

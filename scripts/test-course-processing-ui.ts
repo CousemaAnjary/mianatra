@@ -5,7 +5,7 @@ import {
   type CourseProcessingDeps,
   type CourseProcessingSnapshot,
 } from "../src/features/course-processing/services/course-processing.controller";
-import { AllCoursePagesAnalysisFailedError, type MultiPageCourseAnalysis } from "../src/features/course-analysis";
+import { AllCoursePagesAnalysisFailedError, type CoursePageAnalysis, type MultiPageCourseAnalysis } from "../src/features/course-analysis";
 import { parseRevisionSheetContent } from "../src/features/revision-sheet/services/revision-sheet-view.service";
 import { toSessionExercise } from "../src/features/study-session/utils/real-session-exercise";
 
@@ -126,6 +126,24 @@ function multiPageAnalysis(input: Partial<MultiPageCourseAnalysis> = {}): MultiP
   };
 }
 
+function pageAnalysis(input: Partial<CoursePageAnalysis> = {}): CoursePageAnalysis {
+  return {
+    detectedTitle: "Fonctions",
+    detectedSubject: "Mathématiques",
+    detectedLevel: "2nde",
+    concepts: [{ name: "Fonction affine", description: "Forme ax+b" }],
+    definitions: ["Définition"],
+    formulas: [],
+    examples: [],
+    dates: [],
+    keywords: ["fonction"],
+    partialSummary: "Résumé de page.",
+    warnings: [],
+    confidence: 0.8,
+    ...input,
+  };
+}
+
 function detail(input: Partial<CourseDetail> = {}): CourseDetail {
   return {
     course: course(),
@@ -145,8 +163,11 @@ function deps(input: {
   analysisError?: unknown;
   sheetError?: unknown;
   exercisesError?: unknown;
+  holdAnalysis?: boolean;
 } = {}) {
   const snapshots: CourseProcessingSnapshot[] = [];
+  let releaseAnalysis: (() => void) | null = null;
+  let analysisCalls = 0;
   const dependency: CourseProcessingDeps = {
     courses: { findDetailById: async () => input.detail ?? detail() },
     pages: {
@@ -154,9 +175,26 @@ function deps(input: {
       prepare: async (coursePage) => ({ pageId: coursePage.id, pageIndex: coursePage.pageIndex, imageBase64: "ZmFrZS1wYWdl", mimeType: "image/png" }),
     },
     analysis: {
-      analyzeCoursePages: async (_payload, onPageDone) => {
-        onPageDone();
-        onPageDone();
+      analyzeCoursePages: async (payload, callbacks) => {
+        analysisCalls += 1;
+        if (input.holdAnalysis) {
+          await new Promise<void>((resolve) => {
+            releaseAnalysis = resolve;
+          });
+        }
+        for (const pageInput of payload.pages) {
+          callbacks.onPageAttempt({ pageIndex: pageInput.pageIndex, attemptNumber: 1, maxAttempts: 2, retryReason: null });
+          callbacks.onPageAttemptDone({ pageIndex: pageInput.pageIndex, attemptNumber: 1, durationMs: 10, errorCode: null, httpStatus: null });
+          callbacks.onPageDone({
+            pageId: pageInput.pageId ?? null,
+            pageIndex: pageInput.pageIndex,
+            status: "success",
+            analysis: pageAnalysis(),
+            errorCode: null,
+            errorMessage: null,
+            attemptsCount: 1,
+          });
+        }
         if (input.analysisError) {
           throw input.analysisError;
         }
@@ -181,7 +219,14 @@ function deps(input: {
   };
   const controller = createCourseProcessingController("course-1", dependency);
   controller.subscribe((snapshot) => snapshots.push(snapshot));
-  return { controller, snapshots };
+  return {
+    controller,
+    snapshots,
+    get analysisCalls() {
+      return analysisCalls;
+    },
+    releaseAnalysis: () => releaseAnalysis?.(),
+  };
 }
 
 async function main() {
@@ -195,6 +240,7 @@ async function main() {
   assert.equal(successful.snapshots.some((snapshot) => snapshot.status === "analyzing"), true, "étape analyzing visible");
   assert.equal(successful.snapshots.at(-1)?.pendingAnalysis?.summary, "Résumé de l'analyse.", "analyse en attente de confirmation");
   assert.equal(successful.snapshots.at(-1)?.progress.currentPage, 2, "progression des pages");
+  assert.equal(successful.snapshots.at(-1)?.progress.processedPages, 2, "pages traitées séparées des tentatives");
   await successful.controller.confirmAndContinue();
   assert.equal(successful.snapshots.some((snapshot) => snapshot.status === "persisting"), true, "confirmation et persistance");
   assert.equal(successful.snapshots.some((snapshot) => snapshot.status === "generating_sheet"), true, "génération fiche");
@@ -209,6 +255,27 @@ async function main() {
   await onePageDoubleNotification.controller.startProcessing();
   assert.equal(onePageDoubleNotification.snapshots.at(-1)?.progress.currentPage, 1, "progression bornée au nombre de pages");
   assert.equal(onePageDoubleNotification.snapshots.at(-1)?.progress.totalPages, 1, "total de pages conservé");
+
+  const onePageAttempt = deps({
+    detail: detail({ course: course({ pageCount: 1 }), pages: [page(0)] }),
+    pages: [page(0)],
+    analysisResult: multiPageAnalysis({ successfulPageCount: 1 }),
+  });
+  await onePageAttempt.controller.startProcessing();
+  assert.equal(onePageAttempt.snapshots.some((snapshot) => snapshot.progress.attemptNumber === 1), true, "tentative IA visible séparément");
+  assert.equal(
+    onePageAttempt.snapshots.every((snapshot) => snapshot.progress.currentPage <= snapshot.progress.totalPages),
+    true,
+    "les tentatives ne gonflent jamais le compteur de pages",
+  );
+
+  const doubleStart = deps({ holdAnalysis: true });
+  const firstStart = doubleStart.controller.startProcessing();
+  const secondStart = doubleStart.controller.startProcessing();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  doubleStart.releaseAnalysis();
+  await Promise.all([firstStart, secondStart]);
+  assert.equal(doubleStart.analysisCalls, 1, "double clic analyse ignoré pendant un traitement actif");
 
   const partial = deps({ analysisResult: multiPageAnalysis({ failedPageCount: 1, warnings: ["Page 2 floue."] }) });
   await partial.controller.startProcessing();

@@ -15,10 +15,12 @@ export async function createDefaultCourseProcessingDeps(): Promise<CourseProcess
       prepare: prepareCoursePageImage,
     },
     analysis: {
-      analyzeCoursePages: (input: AnalyzeCoursePagesInput, onPageDone: () => void) =>
+      analyzeCoursePages: (input: AnalyzeCoursePagesInput, callbacks) =>
         analyzeCoursePages(input, {
           analyzeSinglePage: (pageInput) => analyzeCoursePage(pageInput, { aiService: createConfiguredMobileAIService }),
-          onPageDone: () => onPageDone(),
+          onPageDone: callbacks.onPageDone,
+          onPageAttempt: callbacks.onPageAttempt,
+          onPageAttemptDone: callbacks.onPageAttemptDone,
         }),
       persistCourseAnalysis: (input) =>
         persistCourseAnalysis(input, {

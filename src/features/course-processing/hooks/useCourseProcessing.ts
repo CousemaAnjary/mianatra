@@ -9,6 +9,10 @@ const idleSnapshot: CourseProcessingSnapshot = {
     totalPages: 0,
     percent: 0,
     message: "Prêt",
+    processedPages: 0,
+    currentPageIndex: null,
+    attemptNumber: null,
+    maxAttempts: null,
   },
   error: null,
   result: {

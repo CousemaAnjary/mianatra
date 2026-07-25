@@ -1,6 +1,8 @@
 import type { CourseAnalysis, CourseDetail, CoursePage, RevisionSheet, Concept, Exercise } from "@/src/db";
-import type { AnalyzeCoursePagesInput, MultiPageCourseAnalysis } from "@/src/features/course-analysis";
+import type { AnalyzeCoursePagesInput, MultiPageCourseAnalysis, PageAnalysisResult } from "@/src/features/course-analysis";
 import { AllCoursePagesAnalysisFailedError } from "@/src/features/course-analysis";
+import { logCourseProcessing } from "../utils/processing-log";
+import type { PreparedCoursePageImage } from "../utils/page-image";
 
 export type CourseProcessingStatus =
   | "idle"
@@ -16,6 +18,10 @@ export type CourseProcessingProgress = {
   totalPages: number;
   percent: number;
   message: string;
+  processedPages: number;
+  currentPageIndex: number | null;
+  attemptNumber: number | null;
+  maxAttempts: number | null;
 };
 
 export type CourseProcessingResult = {
@@ -42,10 +48,17 @@ export type CourseProcessingDeps = {
   };
   pages: {
     findAllByCourse: (courseId: string) => Promise<CoursePage[]>;
-    prepare: (page: CoursePage) => Promise<AnalyzeCoursePagesInput["pages"][number]>;
+    prepare: (page: CoursePage) => Promise<PreparedCoursePageImage>;
   };
   analysis: {
-    analyzeCoursePages: (input: AnalyzeCoursePagesInput, onPageDone: () => void) => Promise<MultiPageCourseAnalysis>;
+    analyzeCoursePages: (
+      input: AnalyzeCoursePagesInput,
+      callbacks: {
+        onPageDone: (result: PageAnalysisResult) => void;
+        onPageAttempt: (input: { pageIndex: number; attemptNumber: number; maxAttempts: number; retryReason?: string | null }) => void;
+        onPageAttemptDone: (input: { pageIndex: number; attemptNumber: number; durationMs: number; errorCode: string | null; httpStatus: number | null }) => void;
+      },
+    ) => Promise<MultiPageCourseAnalysis>;
     persistCourseAnalysis: (input: {
       courseId: string;
       analysis: MultiPageCourseAnalysis;
@@ -65,6 +78,10 @@ const initialProgress: CourseProcessingProgress = {
   totalPages: 0,
   percent: 0,
   message: "Prêt",
+  processedPages: 0,
+  currentPageIndex: null,
+  attemptNumber: null,
+  maxAttempts: null,
 };
 
 function emptyResult(): CourseProcessingResult {
@@ -127,6 +144,9 @@ function userMessage(error: unknown) {
   if (error instanceof Error && error.message === "COURSE_WITHOUT_PAGES") {
     return "Ce cours ne contient aucune page à analyser.";
   }
+  if (error instanceof Error && error.message === "COURSE_NOT_FOUND") {
+    return "Cours introuvable.";
+  }
   return "Une erreur est survenue pendant le traitement.";
 }
 
@@ -141,6 +161,7 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
   };
   const listeners = new Set<(snapshot: CourseProcessingSnapshot) => void>();
   let lastFailedAction: "analysis" | "sheet" | "exercises" | null = null;
+  let activeProcessing: Promise<MultiPageCourseAnalysis> | null = null;
 
   function emit(next: Partial<CourseProcessingSnapshot>) {
     snapshot = { ...snapshot, ...next };
@@ -158,60 +179,139 @@ export function createCourseProcessingController(courseId: string, deps: CourseP
   }
 
   async function startProcessing() {
-    lastFailedAction = null;
-    emit({
-      status: "analyzing",
-      error: null,
-      pendingAnalysis: null,
-      progress: { currentPage: 0, totalPages: 0, percent: 0, message: "Préparation des pages" },
-    });
+    if (activeProcessing) {
+      return activeProcessing;
+    }
 
-    try {
-      const detail = await refreshDetail();
-      if (!detail) {
-        throw new Error("COURSE_NOT_FOUND");
-      }
-      const pages = await deps.pages.findAllByCourse(courseId);
-      if (pages.length === 0) {
-        throw new Error("COURSE_WITHOUT_PAGES");
-      }
-      setProgress({ totalPages: pages.length, message: "Lecture des pages" });
-      const preparedPages = [];
-      for (const page of pages) {
-        preparedPages.push(await deps.pages.prepare(page));
-      }
-      let completedPages = 0;
-      const analysis = await deps.analysis.analyzeCoursePages(
-        {
-          courseId,
-          pages: preparedPages,
-          knownSubject: detail.subject?.name ?? null,
-          knownGrade: detail.course.grade,
-        },
-        () => {
-          completedPages = Math.min(pages.length, completedPages + 1);
-          setProgress({
-            currentPage: completedPages,
-            totalPages: pages.length,
-            percent: Math.round((completedPages / pages.length) * 40),
-            message: `Analyse des pages ${completedPages}/${pages.length}`,
-          });
-        },
-      );
-      const warnings = analysis.warnings.length > 0 || analysis.failedPageCount > 0
-        ? [...analysis.warnings, ...(analysis.failedPageCount > 0 ? [`${analysis.failedPageCount} page(s) non analysée(s).`] : [])]
-        : [];
+    lastFailedAction = null;
+    const processing = (async () => {
       emit({
-        status: "idle",
-        pendingAnalysis: analysis,
-        result: { ...snapshot.result, analysis, warnings },
-        progress: { currentPage: pages.length, totalPages: pages.length, percent: 45, message: "Analyse prête à confirmer" },
+        status: "analyzing",
+        error: null,
+        pendingAnalysis: null,
+        progress: { ...initialProgress, percent: 0, message: "Préparation des pages" },
       });
-      return analysis;
-    } catch (error) {
-      lastFailedAction = "analysis";
-      emit({ status: "error", error: userMessage(error) });
-      throw error;
+
+      const preparedPages: PreparedCoursePageImage[] = [];
+      try {
+        const detail = await refreshDetail();
+        if (!detail) {
+          throw new Error("COURSE_NOT_FOUND");
+        }
+        const pages = await deps.pages.findAllByCourse(courseId);
+        if (pages.length === 0) {
+          throw new Error("COURSE_WITHOUT_PAGES");
+        }
+        setProgress({ totalPages: pages.length, message: "Lecture des pages" });
+        for (const page of pages) {
+          const prepared = await deps.pages.prepare(page);
+          preparedPages.push(prepared);
+          if (prepared.metrics) {
+            logCourseProcessing("page-prepared", {
+              courseId,
+              pageIndex: prepared.pageIndex,
+              width: prepared.metrics.width,
+              height: prepared.metrics.height,
+              originalFileSizeBytes: prepared.metrics.originalFileSizeBytes,
+              optimizedFileSizeBytes: prepared.metrics.optimizedFileSizeBytes,
+              base64Length: prepared.metrics.base64Length,
+              preparationDurationMs: prepared.metrics.preparationDurationMs,
+              mimeType: prepared.metrics.mimeType,
+            });
+          }
+        }
+        let completedPages = 0;
+        const analysis = await deps.analysis.analyzeCoursePages(
+          {
+            courseId,
+            pages: preparedPages.map((page) => ({
+              pageId: page.pageId,
+              pageIndex: page.pageIndex,
+              imageBase64: page.imageBase64,
+              mimeType: page.mimeType,
+            })),
+            knownSubject: detail.subject?.name ?? null,
+            knownGrade: detail.course.grade,
+          },
+          {
+            onPageAttempt: (attempt) => {
+              logCourseProcessing("page-analysis-attempt", {
+                courseId,
+                pageIndex: attempt.pageIndex,
+                attemptNumber: attempt.attemptNumber,
+                maxAttempts: attempt.maxAttempts,
+                retryReason: attempt.retryReason,
+              });
+              setProgress({
+                currentPage: completedPages,
+                processedPages: completedPages,
+                currentPageIndex: attempt.pageIndex,
+                attemptNumber: attempt.attemptNumber,
+                maxAttempts: attempt.maxAttempts,
+                totalPages: pages.length,
+                percent: Math.round((completedPages / pages.length) * 40),
+                message: `Page ${attempt.pageIndex + 1}/${pages.length} - tentative ${attempt.attemptNumber}/${attempt.maxAttempts}`,
+              });
+            },
+            onPageAttemptDone: (attempt) => {
+              logCourseProcessing("page-analysis-attempt-done", {
+                courseId,
+                pageIndex: attempt.pageIndex,
+                attemptNumber: attempt.attemptNumber,
+                durationMs: attempt.durationMs,
+                errorCode: attempt.errorCode,
+                httpStatus: attempt.httpStatus,
+              });
+            },
+            onPageDone: () => {
+              completedPages = Math.min(pages.length, completedPages + 1);
+              setProgress({
+                currentPage: completedPages,
+                processedPages: completedPages,
+                totalPages: pages.length,
+                percent: Math.round((completedPages / pages.length) * 40),
+                currentPageIndex: null,
+                attemptNumber: null,
+                maxAttempts: null,
+                message: `Analyse des pages ${completedPages}/${pages.length}`,
+              });
+            },
+          },
+        );
+        const warnings = analysis.warnings.length > 0 || analysis.failedPageCount > 0
+          ? [...analysis.warnings, ...(analysis.failedPageCount > 0 ? [`${analysis.failedPageCount} page(s) non analysée(s).`] : [])]
+          : [];
+        emit({
+          status: "idle",
+          pendingAnalysis: analysis,
+          result: { ...snapshot.result, analysis, warnings },
+          progress: {
+            ...snapshot.progress,
+            currentPage: pages.length,
+            processedPages: pages.length,
+            totalPages: pages.length,
+            percent: 45,
+            currentPageIndex: null,
+            attemptNumber: null,
+            maxAttempts: null,
+            message: "Analyse prête à confirmer",
+          },
+        });
+        return analysis;
+      } catch (error) {
+        lastFailedAction = "analysis";
+        emit({ status: "error", error: userMessage(error) });
+        throw error;
+      } finally {
+        await Promise.all(preparedPages.map((page) => page.cleanup?.().catch(() => undefined)));
+      }
+    })();
+
+    activeProcessing = processing;
+    try {
+      return await processing;
+    } finally {
+      activeProcessing = null;
     }
   }
 

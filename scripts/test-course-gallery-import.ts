@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import type { Course, CoursePage } from "@/src/db";
-import { prepareCoursePageImage } from "@/src/features/course-processing/utils/page-image";
+import { coursePageImageSizing, prepareCoursePageImage } from "@/src/features/course-processing/utils/page-image";
+import { logCourseProcessing } from "@/src/features/course-processing/utils/processing-log";
 import {
   GalleryImportError,
   createGalleryImportService,
@@ -149,14 +150,79 @@ async function run() {
   );
   assert.deepEqual(failingFiles.deleted, failingFiles.copied, "nettoyage si création DB échoue");
 
+  const cleanedOptimizedUris: string[] = [];
   const prepared = await prepareCoursePageImage(coursePage("file:///app/course-imports/test-import/page-1.jpg", 0), {
-    readAsBase64: async (uri) => {
-      assert.equal(uri, "file:///app/course-imports/test-import/page-1.jpg");
-      return "ZmFrZS1pbWFnZQ==";
+    optimizeImage: async (input) => {
+      assert.equal(input.uri, "file:///app/course-imports/test-import/page-1.jpg");
+      assert.equal(input.maxSide, coursePageImageSizing.MAX_IMAGE_SIDE);
+      assert.equal(input.jpegQuality, coursePageImageSizing.JPEG_QUALITY);
+      return {
+        uri: "file:///cache/optimized-page-1.jpg",
+        width: 1200,
+        height: 1600,
+        temporaryUris: ["file:///cache/optimized-page-1.jpg"],
+      };
+    },
+    fileGateway: {
+      readAsBase64: async (uri) => {
+        assert.equal(uri, "file:///cache/optimized-page-1.jpg");
+        return "ZmFrZS1pbWFnZQ==";
+      },
+      getFileSize: async (uri) => uri.length,
+      deleteFiles: async (uris) => {
+        cleanedOptimizedUris.push(...uris);
+      },
     },
   });
-  assert.equal(prepared.imageBase64, "ZmFrZS1pbWFnZQ==", "conversion locale en base64");
-  assert.equal(prepared.mimeType, "image/jpeg", "MIME conservé");
+  assert.equal(prepared.imageBase64, "ZmFrZS1pbWFnZQ==", "conversion locale optimisée en base64");
+  assert.equal(prepared.mimeType, "image/jpeg", "MIME optimisé en JPEG");
+  assert.equal(prepared.metrics?.width, 1200, "largeur optimisée suivie");
+  assert.equal(prepared.metrics?.height, 1600, "hauteur optimisée suivie");
+  await prepared.cleanup?.();
+  assert.deepEqual(cleanedOptimizedUris, ["file:///cache/optimized-page-1.jpg"], "fichiers temporaires nettoyés après analyse");
+
+  assert.deepEqual(coursePageImageSizing.targetResize(4096, 2048), { width: 2048, height: 1024 }, "image large redimensionnée");
+  assert.equal(coursePageImageSizing.targetResize(1200, 1600), null, "image raisonnable non agrandie");
+
+  const previousInfo = console.info;
+  const logged: unknown[] = [];
+  console.info = (...args: unknown[]) => {
+    logged.push(args);
+  };
+  try {
+    logCourseProcessing("test", { apiKey: "secret-key", imageBase64: "raw-base64", base64Length: 12, durationMs: 3 });
+  } finally {
+    console.info = previousInfo;
+  }
+  const loggedJson = JSON.stringify(logged);
+  assert.doesNotMatch(loggedJson, /secret-key|raw-base64/, "logs sans clé ni base64 brut");
+
+  const dataUriPrepared = await prepareCoursePageImage(coursePage("data:image/png;base64,ZmFrZQ==", 0), {
+    readAsBase64: async () => {
+      throw new Error("data URI should not be read from disk");
+    },
+    optimizeImage: async () => {
+      throw new Error("data URI should not be optimized");
+    },
+  });
+  assert.equal(dataUriPrepared.imageBase64, "ZmFrZQ==", "data URI conservée");
+  assert.equal(dataUriPrepared.mimeType, "image/png", "MIME data URI conservé");
+
+  const readFailure = prepareCoursePageImage(coursePage("file:///missing.jpg", 0), {
+    optimizeImage: async () => ({ uri: "file:///missing-optimized.jpg", width: null, height: null, temporaryUris: [] }),
+    fileGateway: {
+      readAsBase64: async () => {
+        throw new Error("missing");
+      },
+      getFileSize: async () => null,
+      deleteFiles: async () => undefined,
+    },
+  });
+  await assert.rejects(
+    () => readFailure,
+    /Impossible de lire le fichier local de cette page/,
+    "fichier local illisible catégorisé",
+  );
 
   assert.ok(!JSON.stringify(createdInputs).includes("Gemini"), "aucun appel Gemini réel dans les tests");
 }
