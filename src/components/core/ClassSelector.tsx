@@ -37,10 +37,10 @@ export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelector
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    gap: spacing[3],
+    gap: spacing[2],
   },
   option: {
-    minHeight: 54,
+    minHeight: 52,
     flex: 1,
     alignItems: "center",
     justifyContent: "center",

@@ -88,16 +88,16 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    paddingTop: spacing[3],
-    paddingBottom: spacing[8],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[10],
   },
   keyboardArea: {
-    gap: spacing[5],
+    gap: spacing[4],
   },
   lamba: {
-    height: 58,
+    height: 44,
     overflow: "hidden",
-    borderRadius: radius.large,
+    borderRadius: radius.medium,
     backgroundColor: colors.surface,
   },
   pattern: {
@@ -105,24 +105,24 @@ const styles = StyleSheet.create({
   },
   titleArea: {
     alignItems: "center",
-    gap: spacing[2],
+    gap: spacing[1],
   },
   brand: {
     color: colors.primary,
-    fontSize: 44,
-    lineHeight: 52,
+    fontSize: 38,
+    lineHeight: 44,
   },
   centered: {
-    maxWidth: 280,
+    maxWidth: 300,
     textAlign: "center",
   },
   illustration: {
     alignSelf: "center",
-    width: "92%",
-    height: 230,
+    width: "88%",
+    height: 180,
   },
   footer: {
-    gap: spacing[3],
+    gap: spacing[2],
   },
   footerRow: {
     flexDirection: "row",

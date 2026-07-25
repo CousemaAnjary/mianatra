@@ -87,13 +87,13 @@ export function OnboardingForm({
 
 const styles = StyleSheet.create({
   form: {
-    gap: spacing[4],
+    gap: spacing[3],
   },
   field: {
     gap: spacing[2],
   },
   inputWrap: {
-    minHeight: 58,
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing[3],
@@ -108,9 +108,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 54,
+    minHeight: 50,
     color: colors.textPrimary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
   },
 });
