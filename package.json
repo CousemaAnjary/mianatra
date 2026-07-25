@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --no-warnings ./scripts/test-db-repositories.mjs && node --import tsx ./scripts/test-business-services.ts && node --import tsx ./server/ai/__tests__/test-ai.ts",
+    "test": "node --no-warnings ./scripts/test-db-repositories.mjs && node --import tsx ./scripts/test-business-services.ts && node --import tsx ./scripts/test-ai-settings.ts && node --import tsx ./server/ai/__tests__/test-ai.ts",
     "gemma:check": "node --import tsx ./scripts/gemma-check.ts",
     "typecheck": "tsc --noEmit",
     "predb:studio": "node ./scripts/check-node-sqlite-studio.js",

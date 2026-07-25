@@ -14,6 +14,7 @@ import {
   demoProfileStats,
   type DemoProfileMenuItem,
 } from "@/src/data/demo-data";
+import { AISettingsCard } from "@/src/features/ai-settings";
 import { colors } from "@/src/theme";
 
 export default function ProfileScreen() {
@@ -87,6 +88,8 @@ export default function ProfileScreen() {
           </View>
         </View>
       </AppCard>
+
+      <AISettingsCard />
 
       <AppCard className="py-2">
         {demoProfileMenu.map((item) => (
