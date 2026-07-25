@@ -1,10 +1,10 @@
 import { Pressable, TextInput, View } from "react-native";
 import { AppText } from "@/src/components/shared";
-import type { DemoExercise } from "@/src/data/demo-data";
 import { colors } from "@/src/theme";
+import { getAnswerControlKind, type SessionAnswerExercise } from "../utils/session-answer-rendering";
 
 type ExerciseAnswerControlProps = {
-  exercise: DemoExercise;
+  exercise: SessionAnswerExercise;
   answer: string;
   onChangeAnswer: (answer: string) => void;
 };
@@ -14,15 +14,19 @@ export function ExerciseAnswerControl({
   answer,
   onChangeAnswer,
 }: ExerciseAnswerControlProps) {
-  if (exercise.type === "short-answer") {
+  const kind = getAnswerControlKind(exercise.type);
+
+  if (kind === "short_answer" || kind === "numeric") {
     return (
       <View className="gap-3">
         <AppText variant="label">Ta réponse</AppText>
         <TextInput
           accessibilityLabel="Réponse de l'exercice"
           autoCapitalize="none"
+          inputMode={kind === "numeric" ? "decimal" : "text"}
+          keyboardType={kind === "numeric" ? "decimal-pad" : "default"}
           onChangeText={onChangeAnswer}
-          placeholder="Écris ta réponse"
+          placeholder={kind === "numeric" ? "Écris un nombre" : "Écris ta réponse"}
           placeholderTextColor={colors.textMuted}
           returnKeyType="done"
           className="min-h-[54px] rounded-xl border border-[#E8D9C7] bg-[#FFFDF8] px-4 text-base leading-6 text-[#2F241F]"
@@ -32,11 +36,22 @@ export function ExerciseAnswerControl({
     );
   }
 
+  if (kind === "unsupported") {
+    return (
+      <View className="gap-3">
+        <AppText variant="label">{"Ce type d'exercice n'est pas pris en charge."}</AppText>
+        <AppText tone="secondary">Retourne au cours ou réessaie plus tard.</AppText>
+      </View>
+    );
+  }
+
+  const options = kind === "true_false" ? ["Vrai", "Faux"] : exercise.options ?? [];
+
   return (
     <View accessibilityRole="radiogroup" className="gap-3">
       <AppText variant="label">Choisis une réponse</AppText>
       <View className="gap-3">
-        {(exercise.options ?? []).map((option) => {
+        {options.map((option) => {
           const selected = option === answer;
 
           return (

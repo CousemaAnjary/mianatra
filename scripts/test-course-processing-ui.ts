@@ -348,7 +348,7 @@ async function main() {
   assert.equal(parseRevisionSheetContent(sheet({ contentJson: "{bad" })).status, "invalid", "fiche invalide gérée");
 
   const mapped = toSessionExercise(exercise(), "Fonction affine");
-  assert.equal(mapped.type, "multiple-choice", "exercice réel adapté à l'écran session");
+  assert.equal(mapped.type, "multiple_choice", "exercice réel adapté à l'écran session avec type SQLite exact");
   assert.deepEqual(mapped.options, ["f(x)=ax+b", "f(x)=x²"], "options réelles chargées");
 
   const session: StudySession = {

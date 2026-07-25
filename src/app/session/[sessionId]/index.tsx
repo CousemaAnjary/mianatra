@@ -21,6 +21,13 @@ import {
   HintPanel,
 } from "@/src/features/study-session/components";
 import { useDemoSession } from "@/src/features/study-session/context/DemoSessionProvider";
+import { canSubmitExerciseAnswer, getAnswerControlKind } from "@/src/features/study-session/utils/session-answer-rendering";
+
+declare const __DEV__: boolean | undefined;
+
+function isDev() {
+  return typeof __DEV__ !== "undefined" ? __DEV__ : true;
+}
 
 export function generateStaticParams() {
   return [{ sessionId: demoSession.id }];
@@ -84,10 +91,33 @@ export default function SessionScreen() {
   }, [realCurrentExerciseId]);
 
   const answer = currentExercise ? state.answers[currentExercise.id] ?? "" : "";
+  const realCanSubmit =
+    realView?.status === "ready"
+      ? canSubmitExerciseAnswer(realView.currentExercise, realAnswer, isSubmittingRealAnswer)
+      : false;
+  const demoCanSubmit = currentExercise ? canSubmitExerciseAnswer(currentExercise, answer) : false;
   const hasStarted = useMemo(
     () => state.attempts.length > 0 || Object.values(state.answers).some((value) => value.length > 0),
     [state.answers, state.attempts.length],
   );
+
+  useEffect(() => {
+    if (!isDev() || realView?.status !== "ready") {
+      return;
+    }
+
+    const exercise = realView.currentExercise;
+    console.log("[real-study-session] exercise-render", {
+      sessionId: resolvedSessionId,
+      exerciseId: exercise.id,
+      exerciseIndex: realView.currentIndex,
+      rawType: exercise.rawType,
+      mappedType: exercise.type,
+      optionsCount: exercise.options?.length ?? 0,
+      hasHint: exercise.hint.trim().length > 0,
+      hasExpectedAnswer: exercise.expectedAnswer.trim().length > 0,
+    });
+  }, [realView, resolvedSessionId]);
 
   const handleSubmit = () => {
     const attempt = submitAnswer();
@@ -192,19 +222,24 @@ export default function SessionScreen() {
               </AppText>
             ) : null}
             <View className="gap-3">
-              <AppButton
-                title={realHintShown ? "Indice affiché" : "Voir un indice"}
-                iconName="lightbulb"
-                variant="tertiary"
-                disabled={realHintShown}
-                onPress={() => setRealHintShown(true)}
-              />
+              {getAnswerControlKind(realView.currentExercise.type) === "unsupported" ? (
+                <AppButton title="Retour au cours" iconName="arrow-left" variant="secondary" onPress={() => router.replace({ pathname: "/course/[courseId]", params: { courseId: realView.session.courseId } })} />
+              ) : (
+                <AppButton
+                  title={realHintShown ? "Indice affiché" : "Voir un indice"}
+                  iconName="lightbulb"
+                  variant="tertiary"
+                  disabled={realHintShown}
+                  onPress={() => setRealHintShown(true)}
+                />
+              )}
               <AppButton
                 title="Valider ma réponse"
                 iconName="check"
+                disabled={!realCanSubmit}
                 loading={isSubmittingRealAnswer}
                 onPress={() => {
-                  if (!realAnswer.trim()) {
+                  if (isSubmittingRealAnswer || !realCanSubmit) {
                     setErrorMessage("Écris ou choisis une réponse avant de demander la correction.");
                     return;
                   }
@@ -287,7 +322,7 @@ export default function SessionScreen() {
               disabled={state.hintsUsed[currentExercise.id]}
               onPress={() => showHint(currentExercise.id)}
             />
-            <AppButton title="Valider ma réponse" iconName="check" onPress={handleSubmit} />
+            <AppButton title="Valider ma réponse" iconName="check" disabled={!demoCanSubmit} onPress={handleSubmit} />
           </View>
         </AppCard>
         <AppButton

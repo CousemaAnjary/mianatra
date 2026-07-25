@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { createReportService } from "../src/features/reports";
-import { createStudySessionService } from "../src/features/study-session";
+import { canSubmitExerciseAnswer, createStudySessionService, getAnswerControlKind } from "../src/features/study-session";
+import { toSessionExercise } from "../src/features/study-session/utils/real-session-exercise";
 import { InvalidSessionStateError } from "../src/features/shared";
 import type { ConceptProgress, Course, Exercise, ExerciseAttempt, SessionReport, StudySession } from "../src/db";
 
@@ -173,6 +176,39 @@ async function submitAt(harness: ReturnType<typeof createHarness>, index: number
 
 async function main() {
   const harness = createHarness();
+  const mappedQcm = toSessionExercise(harness.exercises[0], "Notion QCM");
+  const mappedTrueFalse = toSessionExercise(harness.exercises[2], "Notion vrai faux");
+  const mappedShort = toSessionExercise(harness.exercises[3], "Notion courte");
+  const mappedNumeric = toSessionExercise(harness.exercises[4], "Notion numérique");
+  const mappedUnsupported = toSessionExercise(exercise({ type: "explanation", optionsJson: null }), "Notion inconnue");
+
+  assert.equal(mappedQcm.type, "multiple_choice", "QCM réel conserve son type SQLite");
+  assert.deepEqual(mappedQcm.options, ["A", "B"], "QCM avec options rendu");
+  assert.equal(mappedTrueFalse.type, "true_false", "vrai/faux réel conserve son type SQLite");
+  assert.deepEqual(mappedTrueFalse.options, undefined, "vrai/faux accepte options_json null");
+  assert.equal(mappedShort.type, "short_answer", "réponse courte réelle conserve son type SQLite");
+  assert.equal(mappedShort.options, undefined, "options_json null accepté pour réponse courte");
+  assert.equal(mappedNumeric.type, "numeric", "numérique réel conserve son type SQLite");
+  assert.equal(mappedNumeric.options, undefined, "options_json null accepté pour numérique");
+  assert.equal(mappedUnsupported.type, "unsupported", "type inconnu affichable explicitement");
+  assert.equal(getAnswerControlKind(mappedQcm.type), "multiple_choice", "renderer QCM sélectionné");
+  assert.equal(getAnswerControlKind(mappedTrueFalse.type), "true_false", "renderer vrai/faux sélectionné");
+  assert.equal(getAnswerControlKind(mappedShort.type), "short_answer", "renderer texte sélectionné");
+  assert.equal(getAnswerControlKind(mappedNumeric.type), "numeric", "renderer numérique sélectionné");
+  assert.equal(getAnswerControlKind(mappedUnsupported.type), "unsupported", "renderer erreur sélectionné");
+  assert.equal(canSubmitExerciseAnswer(mappedQcm, ""), false, "bouton désactivé sans option");
+  assert.equal(canSubmitExerciseAnswer(mappedQcm, "A"), true, "bouton activé après choix QCM");
+  assert.equal(canSubmitExerciseAnswer(mappedTrueFalse, "Vrai"), true, "bouton activé après choix vrai/faux");
+  assert.equal(canSubmitExerciseAnswer(mappedShort, "  "), false, "bouton désactivé si texte vide");
+  assert.equal(canSubmitExerciseAnswer(mappedShort, "Suite"), true, "bouton activé après saisie texte");
+  assert.equal(canSubmitExerciseAnswer(mappedNumeric, ""), false, "bouton numérique désactivé si vide");
+  assert.equal(canSubmitExerciseAnswer(mappedNumeric, "abc"), false, "bouton numérique désactivé si non exploitable");
+  assert.equal(canSubmitExerciseAnswer(mappedNumeric, "3,14"), true, "bouton numérique activé après nombre");
+  assert.equal(canSubmitExerciseAnswer(mappedNumeric, "3.14", true), false, "double soumission bloquée");
+  assert.equal(canSubmitExerciseAnswer(mappedUnsupported, "réponse"), false, "type inconnu jamais validable");
+  const answerControlSource = fs.readFileSync(path.join(process.cwd(), "src/features/study-session/components/ExerciseAnswerControl.tsx"), "utf8");
+  assert.doesNotMatch(answerControlSource, /validateExerciseAnswer|checkNumericAnswer|checkShortAnswer|checkMultipleChoiceAnswer|checkTrueFalseAnswer/, "aucune règle de correction dupliquée dans l'écran");
+
   assert.equal((await harness.study.getSession("session-1")).currentExerciseIndex, 0, "chargement session réelle");
   assert.equal(harness.exercises[harness.session.currentExerciseIndex].id, "qcm-correct", "bon exercice courant");
 

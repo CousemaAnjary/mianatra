@@ -1,10 +1,13 @@
 import { View } from "react-native";
 import { AppCard, AppText, StatusBadge } from "@/src/components/shared";
-import type { DemoExercise } from "@/src/data/demo-data";
 import type { SessionAttempt } from "../types/study-session.types";
 
 type CorrectionPanelProps = {
-  exercise: DemoExercise;
+  exercise: {
+    expectedAnswer: string;
+    explanation: string;
+    correctionSteps: string[];
+  };
   attempt: SessionAttempt;
 };
 

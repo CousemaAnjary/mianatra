@@ -1,9 +1,14 @@
 import { Image, View } from "react-native";
 import { AppCard, AppText, StatusBadge } from "@/src/components/shared";
-import type { DemoExercise } from "@/src/data/demo-data";
 
 type ExerciseContentProps = {
-  exercise: DemoExercise;
+  exercise: {
+    title: string;
+    question: string;
+    conceptName: string;
+    generatedFromWeakness?: string;
+    image?: "function-graph";
+  };
 };
 
 export function ExerciseContent({ exercise }: ExerciseContentProps) {

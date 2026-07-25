@@ -5,7 +5,8 @@ export type RealSessionExercise = {
   title: string;
   question: string;
   conceptName: string;
-  type: "short-answer" | "multiple-choice" | "true-false";
+  rawType: string;
+  type: "multiple_choice" | "true_false" | "short_answer" | "numeric" | "unsupported";
   expectedAnswer: string;
   acceptedAnswers?: string[];
   options?: string[];
@@ -29,13 +30,10 @@ function parseOptions(exercise: Exercise) {
 }
 
 function mapExerciseType(type: Exercise["type"]): RealSessionExercise["type"] {
-  if (type === "multiple_choice") {
-    return "multiple-choice";
+  if (type === "multiple_choice" || type === "true_false" || type === "short_answer" || type === "numeric") {
+    return type;
   }
-  if (type === "true_false") {
-    return "true-false";
-  }
-  return "short-answer";
+  return "unsupported";
 }
 
 function mapDifficulty(value: number): RealSessionExercise["difficulty"] {
@@ -54,6 +52,7 @@ export function toSessionExercise(exercise: Exercise, conceptName: string): Real
     title: conceptName,
     question: exercise.question,
     conceptName,
+    rawType: exercise.type,
     type: mapExerciseType(exercise.type),
     expectedAnswer: exercise.expectedAnswer,
     acceptedAnswers: [exercise.expectedAnswer],
