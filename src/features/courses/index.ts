@@ -17,3 +17,5 @@ export {
   updateCourse,
 } from "./services/course.service";
 export type { CourseInput, CoursePatch, CourseRecentActivity, CourseResultCounters, CourseRouteResults, RealCourseResultsState } from "./services/course.service";
+export { buildCourseGradeFilters, createCoursesListViewService, loadCoursesList } from "./services/courses-list-view.service";
+export type { CourseListItem } from "./types/course-list.types";

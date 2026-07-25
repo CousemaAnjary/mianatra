@@ -3,23 +3,25 @@ import { View } from "react-native";
 import { router } from "expo-router";
 import { CourseCard, GradeFilter, type GradeFilterValue } from "@/src/components/core";
 import { AppButton, AppCard, AppScreen, AppText, ScreenHeader } from "@/src/components/shared";
-import { demoCourses, demoGrades, type DemoCourse } from "@/src/data/demo-data";
+import { useCoursesList } from "@/src/features/courses/hooks/use-courses-list";
 
 export default function CoursesScreen() {
-  const filterValues: GradeFilterValue[] = ["Tous", ...demoGrades];
+  const { errorMessage, grades, items, reload, status } = useCoursesList();
   const [selectedFilter, setSelectedFilter] = useState<GradeFilterValue>("Tous");
+  const filterValues: GradeFilterValue[] = grades;
+  const effectiveSelectedFilter = filterValues.includes(selectedFilter) ? selectedFilter : "Tous";
   const filteredCourses = useMemo(
     () =>
-      selectedFilter === "Tous"
-        ? demoCourses
-        : demoCourses.filter((course) => course.grade === selectedFilter),
-    [selectedFilter],
+      effectiveSelectedFilter === "Tous"
+        ? items
+        : items.filter((course) => course.grade === effectiveSelectedFilter),
+    [effectiveSelectedFilter, items],
   );
 
-  function openCourse(course: DemoCourse) {
+  function openCourse(courseId: string) {
     router.push({
       pathname: "/course/[courseId]",
-      params: { courseId: course.id },
+      params: { courseId },
     });
   }
 
@@ -29,23 +31,62 @@ export default function CoursesScreen() {
 
       <GradeFilter
         values={filterValues}
-        selectedValue={selectedFilter}
+        selectedValue={effectiveSelectedFilter}
         onChange={setSelectedFilter}
       />
 
       <View className="gap-3">
-        {filteredCourses.length > 0 ? (
-          filteredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} onPress={openCourse} />
-          ))
-        ) : (
+        {status === "loading" ? (
+          <AppCard className="gap-3">
+            <AppText variant="subtitle">Chargement de tes cours…</AppText>
+            <AppText tone="secondary">On récupère les cours enregistrés sur ce téléphone.</AppText>
+          </AppCard>
+        ) : null}
+
+        {status === "error" ? (
+          <AppCard className="gap-3">
+            <AppText variant="subtitle">Impossible de charger tes cours</AppText>
+            <AppText tone="secondary">{errorMessage ?? "Une erreur est survenue."}</AppText>
+            <AppButton title="Réessayer" iconName="redo" variant="secondary" onPress={reload} />
+          </AppCard>
+        ) : null}
+
+        {status === "ready" && items.length === 0 ? (
+          <AppCard className="gap-3">
+            <AppText variant="subtitle">Aucun cours pour le moment</AppText>
+            <AppText tone="secondary">Ajoute un cours depuis ta galerie pour le retrouver ici.</AppText>
+          </AppCard>
+        ) : null}
+
+        {status === "ready" && items.length > 0 && filteredCourses.length === 0 ? (
           <AppCard className="gap-3">
             <AppText variant="subtitle">Aucun cours pour ce filtre.</AppText>
-            <AppText tone="secondary">
-              Les cours de démonstration apparaîtront ici dès que ce niveau aura du contenu.
-            </AppText>
+            <AppText tone="secondary">Choisis une autre classe ou ajoute un nouveau cours.</AppText>
           </AppCard>
-        )}
+        ) : null}
+
+        {status === "ready" && filteredCourses.length > 0 ? (
+          filteredCourses.map((course) => (
+            <CourseCard
+              key={course.id}
+              course={{
+                id: course.id,
+                title: course.title,
+                subject: course.subject,
+                grade: course.grade,
+                pageCount: course.pageCount,
+                progress: course.progress,
+                iconName: course.iconName,
+                color: course.subjectColor,
+                focusText:
+                  course.masteredCount + course.progressingCount + course.needsWorkCount > 0
+                    ? `${course.masteredCount} maîtrisé(s) • ${course.progressingCount} en progression • ${course.needsWorkCount} à renforcer`
+                    : null,
+              }}
+              onPress={() => openCourse(course.id)}
+            />
+          ))
+        ) : null}
       </View>
 
       <AppButton

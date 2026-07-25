@@ -1,8 +1,7 @@
 import { Pressable, View } from "react-native";
 import { AppText } from "@/src/components/shared";
-import type { DemoGrade } from "@/src/data/demo-data";
 
-export type GradeFilterValue = "Tous" | DemoGrade;
+export type GradeFilterValue = string;
 
 type GradeFilterProps = {
   values: GradeFilterValue[];
