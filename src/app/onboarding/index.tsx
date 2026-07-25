@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Image, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { OnboardingForm } from "@/src/components/core";
-import { AppButton, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
+import { AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { demoGrades, demoProfile, type DemoGrade } from "@/src/data/demo-data";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -79,13 +80,17 @@ export default function OnboardingScreen() {
           <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
           <View style={styles.footerRow}>
             <AppText tone="secondary">1 sur 4</AppText>
-            <AppButton
-              title="Suivant"
-              iconName="arrow-right"
-              iconPosition="right"
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Suivant"
               onPress={validateAndContinue}
-              style={styles.nextButton}
-            />
+              style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
+            >
+              <AppText variant="label" tone="inverse">
+                Suivant
+              </AppText>
+              <FontAwesome5 name="arrow-right" size={16} color={colors.white} />
+            </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -144,8 +149,22 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   nextButton: {
+    minHeight: 54,
     width: "68%",
     maxWidth: 260,
     minWidth: 220,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing[2],
+    justifyContent: "center",
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[3],
+  },
+  nextButtonPressed: {
+    opacity: 0.82,
   },
 });
