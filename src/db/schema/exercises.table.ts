@@ -9,23 +9,21 @@ export const exercises = sqliteTable(
     courseId: text("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-    conceptId: text("concept_id").references(() => concepts.id, {
-      onDelete: "set null",
+    conceptId: text("concept_id").notNull().references(() => concepts.id, {
+      onDelete: "cascade",
       onUpdate: "cascade",
     }),
     type: text("type", {
-      enum: ["multiple_choice", "short_answer", "true_false", "numeric", "explanation"],
+      enum: ["multiple_choice", "short_answer", "true_false", "numeric", "explanation", "graph_reading"],
     }).notNull(),
-    prompt: text("prompt").notNull(),
+    question: text("question").notNull(),
+    expectedAnswer: text("expected_answer").notNull(),
     optionsJson: text("options_json"),
-    answerJson: text("answer_json").notNull(),
-    explanation: text("explanation"),
+    hint: text("hint"),
+    explanation: text("explanation").notNull(),
     difficulty: integer("difficulty").notNull(),
-    generatedFromWeakness: text("generated_from_weakness", {
-      enum: ["concept", "method", "calculation", "graph_reading", "memorization"],
-    }),
+    generatedFromWeakness: integer("generated_from_weakness", { mode: "boolean" }).notNull(),
     createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
   },
   (table) => [
     index("idx_exercises_course_id").on(table.courseId),

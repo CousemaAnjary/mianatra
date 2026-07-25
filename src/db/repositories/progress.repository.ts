@@ -1,52 +1,78 @@
-import { and, eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "../client";
-import { conceptProgress } from "../schema";
-import type { ConceptProgressStatus, NewConceptProgress } from "../types";
-import { createBaseFields, firstOrThrow, touchFields } from "./repository-utils";
+import { nowIso } from "../helpers";
+import { conceptProgress, concepts } from "../schema";
+import type { ConceptProgress, ConceptProgressStatus } from "../types";
+import { assertInteger, assertNonEmpty, assertNonNegative, firstOrThrow } from "./repository-utils";
 
-export type UpsertConceptProgressInput = Omit<NewConceptProgress, "id" | "createdAt" | "updatedAt">;
+export type UpsertConceptProgressInput = {
+  score: number;
+  status: ConceptProgressStatus;
+  attemptsCount: number;
+  correctCount: number;
+  lastPracticedAt?: string | null;
+};
+
+function validateProgressInput(input: UpsertConceptProgressInput) {
+  if (input.score < 0 || input.score > 1) {
+    throw new Error("score must be between 0 and 1.");
+  }
+  assertNonEmpty(input.status, "status");
+  assertInteger(input.attemptsCount, "attemptsCount");
+  assertInteger(input.correctCount, "correctCount");
+  assertNonNegative(input.attemptsCount, "attemptsCount");
+  assertNonNegative(input.correctCount, "correctCount");
+  if (input.correctCount > input.attemptsCount) {
+    throw new Error("correctCount must be lower than or equal to attemptsCount.");
+  }
+}
+
+async function findByConcept(conceptId: string): Promise<ConceptProgress | null> {
+  return db.select().from(conceptProgress).where(eq(conceptProgress.conceptId, conceptId)).get() ?? null;
+}
+
+async function findAll(): Promise<ConceptProgress[]> {
+  return db.select().from(conceptProgress).all();
+}
+
+async function findAllByCourse(courseId: string): Promise<ConceptProgress[]> {
+  const courseConcepts = db.select().from(concepts).where(eq(concepts.courseId, courseId)).all();
+  const conceptIds = courseConcepts.map((concept) => concept.id);
+
+  if (conceptIds.length === 0) {
+    return [];
+  }
+
+  return db.select().from(conceptProgress).where(inArray(conceptProgress.conceptId, conceptIds)).all();
+}
+
+async function upsert(conceptId: string, input: UpsertConceptProgressInput): Promise<ConceptProgress> {
+  assertNonEmpty(conceptId, "conceptId");
+  validateProgressInput(input);
+  const existing = await findByConcept(conceptId);
+  const updatedAt = nowIso();
+
+  if (!existing) {
+    return firstOrThrow(
+      db.insert(conceptProgress).values({ conceptId, updatedAt, ...input }).returning().all(),
+      "Unable to create concept progress.",
+    );
+  }
+
+  return firstOrThrow(
+    db.update(conceptProgress).set({ ...input, updatedAt }).where(eq(conceptProgress.conceptId, conceptId)).returning().all(),
+    "Concept progress not found.",
+  );
+}
+
+async function remove(conceptId: string): Promise<void> {
+  db.delete(conceptProgress).where(eq(conceptProgress.conceptId, conceptId)).run();
+}
 
 export const progressRepository = {
-  listByProfile(profileId: string) {
-    return db.select().from(conceptProgress).where(eq(conceptProgress.profileId, profileId)).all();
-  },
-
-  find(profileId: string, conceptId: string) {
-    return db
-      .select()
-      .from(conceptProgress)
-      .where(and(eq(conceptProgress.profileId, profileId), eq(conceptProgress.conceptId, conceptId)))
-      .get();
-  },
-
-  upsert(input: UpsertConceptProgressInput) {
-    const existing = this.find(input.profileId, input.conceptId);
-
-    if (!existing) {
-      return firstOrThrow(
-        db.insert(conceptProgress).values({ ...createBaseFields(), ...input }).returning().all(),
-        "Unable to create concept progress.",
-      );
-    }
-
-    return firstOrThrow(
-      db
-        .update(conceptProgress)
-        .set({ ...input, ...touchFields() })
-        .where(eq(conceptProgress.id, existing.id))
-        .returning()
-        .all(),
-      "Concept progress not found.",
-    );
-  },
-
-  updateStatus(profileId: string, conceptId: string, status: ConceptProgressStatus, masteryScore: number) {
-    return this.upsert({
-      profileId,
-      conceptId,
-      status,
-      masteryScore,
-      lastReviewedAt: new Date().toISOString(),
-    });
-  },
+  findByConcept,
+  findAll,
+  findAllByCourse,
+  upsert,
+  remove,
 };

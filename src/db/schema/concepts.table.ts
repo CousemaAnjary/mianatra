@@ -1,4 +1,4 @@
-import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { courses } from "./courses.table";
 
 export const concepts = sqliteTable(
@@ -8,14 +8,13 @@ export const concepts = sqliteTable(
     courseId: text("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade", onUpdate: "cascade" }),
-    title: text("title").notNull(),
-    slug: text("slug").notNull(),
-    explanation: text("explanation"),
+    name: text("name").notNull(),
+    description: text("description"),
+    orderIndex: integer("order_index").notNull(),
     createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
   },
   (table) => [
-    uniqueIndex("uniq_concepts_course_slug").on(table.courseId, table.slug),
+    uniqueIndex("uniq_concepts_course_order_index").on(table.courseId, table.orderIndex),
     index("idx_concepts_course_id").on(table.courseId),
   ],
 );

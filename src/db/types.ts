@@ -7,13 +7,8 @@ export type ExerciseType =
   | "short_answer"
   | "true_false"
   | "numeric"
-  | "explanation";
-export type WeaknessType =
-  | "concept"
-  | "method"
-  | "calculation"
-  | "graph_reading"
-  | "memorization";
+  | "explanation"
+  | "graph_reading";
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
 export type StudySessionType = "initial" | "targeted" | "retry";
 export type StudySessionStatus = "active" | "completed" | "abandoned";
@@ -24,65 +19,6 @@ export type ConceptProgressStatus =
   | "needs_reinforcement"
   | "mastered";
 export type RecommendationType = "resume" | "targeted" | "new_course";
-
-export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
-export type JsonObject = { [key: string]: JsonValue };
-
-export function createUuid() {
-  const cryptoObject = globalThis.crypto;
-
-  if (typeof cryptoObject?.randomUUID === "function") {
-    return cryptoObject.randomUUID();
-  }
-
-  if (typeof cryptoObject?.getRandomValues !== "function") {
-    throw new Error("UUID generation requires crypto.getRandomValues support.");
-  }
-
-  const bytes = new Uint8Array(16);
-  cryptoObject.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
-
-  return [
-    hex.slice(0, 4).join(""),
-    hex.slice(4, 6).join(""),
-    hex.slice(6, 8).join(""),
-    hex.slice(8, 10).join(""),
-    hex.slice(10, 16).join(""),
-  ].join("-");
-}
-
-export function nowIso() {
-  return new Date().toISOString();
-}
-
-export function serializeJson(value: JsonValue) {
-  return JSON.stringify(value);
-}
-
-export function parseJson<T extends JsonValue>(
-  value: string | null,
-  fallback: T,
-  guard?: (parsed: unknown) => parsed is T,
-) {
-  if (!value) {
-    return fallback;
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (guard) {
-      return guard(parsed) ? parsed : fallback;
-    }
-
-    return parsed as T;
-  } catch {
-    return fallback;
-  }
-}
 
 export function ensureDifficulty(value: number): Difficulty {
   if (value < 1 || value > 5 || !Number.isInteger(value)) {

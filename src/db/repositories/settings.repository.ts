@@ -1,36 +1,44 @@
 import { eq } from "drizzle-orm";
 import { db } from "../client";
+import { nowIso } from "../helpers";
 import { appSettings } from "../schema";
-import type { JsonValue } from "../types";
-import { parseJson, serializeJson } from "../types";
-import { createBaseFields, firstOrThrow, touchFields } from "./repository-utils";
+import type { AppSetting } from "../types";
+import { assertNonEmpty, firstOrThrow } from "./repository-utils";
+
+async function get(key: string): Promise<string | null> {
+  assertNonEmpty(key, "key");
+  return db.select().from(appSettings).where(eq(appSettings.key, key)).get()?.value ?? null;
+}
+
+async function set(key: string, value: string): Promise<AppSetting> {
+  assertNonEmpty(key, "key");
+  const existing = db.select().from(appSettings).where(eq(appSettings.key, key)).get();
+  const updatedAt = nowIso();
+
+  if (!existing) {
+    return firstOrThrow(
+      db.insert(appSettings).values({ key, value, updatedAt }).returning().all(),
+      "Unable to create setting.",
+    );
+  }
+
+  return firstOrThrow(
+    db.update(appSettings).set({ value, updatedAt }).where(eq(appSettings.key, key)).returning().all(),
+    "Setting not found.",
+  );
+}
+
+async function remove(key: string): Promise<void> {
+  db.delete(appSettings).where(eq(appSettings.key, key)).run();
+}
+
+async function has(key: string): Promise<boolean> {
+  return (await get(key)) !== null;
+}
 
 export const settingsRepository = {
-  get<T extends JsonValue>(key: string, fallback: T, guard?: (parsed: unknown) => parsed is T) {
-    const row = db.select().from(appSettings).where(eq(appSettings.key, key)).get();
-
-    return parseJson(row?.valueJson ?? null, fallback, guard);
-  },
-
-  set(key: string, value: JsonValue) {
-    const existing = db.select().from(appSettings).where(eq(appSettings.key, key)).get();
-    const valueJson = serializeJson(value);
-
-    if (!existing) {
-      return firstOrThrow(
-        db.insert(appSettings).values({ ...createBaseFields(), key, valueJson }).returning().all(),
-        "Unable to create setting.",
-      );
-    }
-
-    return firstOrThrow(
-      db
-        .update(appSettings)
-        .set({ valueJson, ...touchFields() })
-        .where(eq(appSettings.id, existing.id))
-        .returning()
-        .all(),
-      "Setting not found.",
-    );
-  },
+  get,
+  set,
+  remove,
+  has,
 };

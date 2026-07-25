@@ -2,6 +2,7 @@
 
 import m0000 from './20260725114524_quick_golden_guardian/migration.sql';
 import m0001 from './20260725153531_tranquil_skreet/migration.sql';
+import m0002 from './20260725165016_local_singleton_schema/migration.sql';
 
 export default {
   journal: {
@@ -18,10 +19,17 @@ export default {
         tag: "20260725153531_tranquil_skreet",
         breakpoints: true,
       },
+      {
+        idx: 2,
+        when: 20260725165016,
+        tag: "20260725165016_local_singleton_schema",
+        breakpoints: true,
+      },
     ],
   },
   migrations: {
     "20260725114524_quick_golden_guardian": m0000,
     "20260725153531_tranquil_skreet": m0001,
+    "20260725165016_local_singleton_schema": m0002,
   },
 };

@@ -1,90 +1,111 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../client";
-import { exerciseAttempts, sessionReports, studySessions } from "../schema";
-import type { NewExerciseAttempt, NewSessionReport, NewStudySession, StudySessionStatus } from "../types";
-import { createBaseFields, firstOrThrow, touchFields } from "./repository-utils";
+import { createId, nowIso } from "../helpers";
+import { studySessions } from "../schema";
+import type { NewStudySession, StudySession } from "../types";
+import { assertInteger, assertNonEmpty, assertNonNegative, firstOrThrow } from "./repository-utils";
 
-export type StartStudySessionInput = Omit<NewStudySession, "id" | "status" | "startedAt" | "completedAt" | "createdAt" | "updatedAt">;
-export type RecordAttemptInput = Omit<NewExerciseAttempt, "id" | "attemptedAt" | "createdAt" | "updatedAt">;
-export type CreateSessionReportInput = Omit<NewSessionReport, "id" | "createdAt" | "updatedAt">;
+export type CreateStudySessionInput = Omit<
+  NewStudySession,
+  "id" | "status" | "currentExerciseIndex" | "startedAt" | "completedAt" | "durationSeconds" | "createdAt"
+>;
+
+function validateSessionInput(input: CreateStudySessionInput) {
+  assertNonEmpty(input.courseId, "courseId");
+  assertNonEmpty(input.type, "type");
+}
+
+async function findById(id: string): Promise<StudySession | null> {
+  return db.select().from(studySessions).where(eq(studySessions.id, id)).get() ?? null;
+}
+
+async function findActiveByCourse(courseId: string): Promise<StudySession | null> {
+  return (
+    db
+      .select()
+      .from(studySessions)
+      .where(and(eq(studySessions.courseId, courseId), eq(studySessions.status, "active")))
+      .get() ?? null
+  );
+}
+
+async function create(input: CreateStudySessionInput): Promise<StudySession> {
+  validateSessionInput(input);
+  return db.transaction((tx) => {
+    const active = tx
+      .select()
+      .from(studySessions)
+      .where(and(eq(studySessions.courseId, input.courseId), eq(studySessions.status, "active")))
+      .get();
+
+    if (active) {
+      throw new Error("An active session already exists for this course.");
+    }
+
+    const now = nowIso();
+    return firstOrThrow(
+      tx
+        .insert(studySessions)
+        .values({
+          id: createId(),
+          courseId: input.courseId,
+          type: input.type,
+          status: "active",
+          currentExerciseIndex: 0,
+          startedAt: now,
+          completedAt: null,
+          durationSeconds: 0,
+          createdAt: now,
+        })
+        .returning()
+        .all(),
+      "Unable to create study session.",
+    );
+  });
+}
+
+async function updateCurrentExerciseIndex(id: string, index: number): Promise<StudySession> {
+  assertInteger(index, "currentExerciseIndex");
+  assertNonNegative(index, "currentExerciseIndex");
+  return firstOrThrow(
+    db.update(studySessions).set({ currentExerciseIndex: index }).where(eq(studySessions.id, id)).returning().all(),
+    "Study session not found.",
+  );
+}
+
+async function complete(id: string, durationSeconds: number): Promise<StudySession> {
+  assertInteger(durationSeconds, "durationSeconds");
+  assertNonNegative(durationSeconds, "durationSeconds");
+  return firstOrThrow(
+    db
+      .update(studySessions)
+      .set({ status: "completed", completedAt: nowIso(), durationSeconds })
+      .where(eq(studySessions.id, id))
+      .returning()
+      .all(),
+    "Study session not found.",
+  );
+}
+
+async function abandon(id: string, durationSeconds: number): Promise<StudySession> {
+  assertInteger(durationSeconds, "durationSeconds");
+  assertNonNegative(durationSeconds, "durationSeconds");
+  return firstOrThrow(
+    db
+      .update(studySessions)
+      .set({ status: "abandoned", completedAt: nowIso(), durationSeconds })
+      .where(eq(studySessions.id, id))
+      .returning()
+      .all(),
+    "Study session not found.",
+  );
+}
 
 export const studySessionsRepository = {
-  start(input: StartStudySessionInput) {
-    const now = new Date().toISOString();
-
-    return firstOrThrow(
-      db
-        .insert(studySessions)
-        .values({ ...createBaseFields(), ...input, status: "active", startedAt: now })
-        .returning()
-        .all(),
-      "Unable to start study session.",
-    );
-  },
-
-  findById(id: string) {
-    return db.select().from(studySessions).where(eq(studySessions.id, id)).get();
-  },
-
-  setStatus(id: string, status: StudySessionStatus) {
-    const completedAt = status === "completed" ? new Date().toISOString() : null;
-
-    return firstOrThrow(
-      db
-        .update(studySessions)
-        .set({ status, completedAt, ...touchFields() })
-        .where(eq(studySessions.id, id))
-        .returning()
-        .all(),
-      "Study session not found.",
-    );
-  },
-
-  abandon(id: string) {
-    return this.setStatus(id, "abandoned");
-  },
-
-  recordAttempt(input: RecordAttemptInput) {
-    return firstOrThrow(
-      db
-        .insert(exerciseAttempts)
-        .values({ ...createBaseFields(), ...input, attemptedAt: new Date().toISOString() })
-        .returning()
-        .all(),
-      "Unable to record exercise attempt.",
-    );
-  },
-
-  completeWithReport(sessionId: string, report: Omit<CreateSessionReportInput, "sessionId">) {
-    return db.transaction((tx) => {
-      const now = new Date().toISOString();
-      const session = firstOrThrow(
-        tx
-          .update(studySessions)
-          .set({ status: "completed", completedAt: now, ...touchFields() })
-          .where(eq(studySessions.id, sessionId))
-          .returning()
-          .all(),
-        "Study session not found.",
-      );
-      const sessionReport = firstOrThrow(
-        tx
-          .insert(sessionReports)
-          .values({ ...createBaseFields(), ...report, sessionId })
-          .returning()
-          .all(),
-        "Unable to create session report.",
-      );
-
-      return { session, report: sessionReport };
-    });
-  },
-
-  getDetail(id: string) {
-    return {
-      session: this.findById(id),
-      attempts: db.select().from(exerciseAttempts).where(eq(exerciseAttempts.sessionId, id)).all(),
-      reports: db.select().from(sessionReports).where(eq(sessionReports.sessionId, id)).all(),
-    };
-  },
+  findById,
+  findActiveByCourse,
+  create,
+  updateCurrentExerciseIndex,
+  complete,
+  abandon,
 };
