@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { AppText } from "@/src/components/shared";
 import { colors } from "@/src/theme";
@@ -19,7 +19,8 @@ export function CourseProgressRing({ value, size = 118 }: CourseProgressRingProp
       accessibilityLabel={`Progression du chapitre : ${normalizedValue} pour cent`}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: normalizedValue }}
-      style={[styles.wrap, { width: size, height: size }]}
+      className="items-center justify-center"
+      style={{ width: size, height: size }}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Circle
@@ -44,19 +45,9 @@ export function CourseProgressRing({ value, size = 118 }: CourseProgressRingProp
           origin={`${size / 2}, ${size / 2}`}
         />
       </Svg>
-      <View style={styles.label}>
+      <View className="absolute">
         <AppText variant="heading">{normalizedValue}%</AppText>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: {
-    position: "absolute",
-  },
-});

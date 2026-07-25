@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, View } from "react-native";
 import { router } from "expo-router";
 import { AddPageButton, CoursePageGrid, ImportStepHeader } from "@/src/features/course-import/components";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import { demoCourse, demoCoursePages, type DemoCoursePage } from "@/src/data/demo-data";
-import { spacing } from "@/src/theme";
 
 function normalizePages(pages: DemoCoursePage[]): DemoCoursePage[] {
   return pages.map((page, index) => ({ ...page, order: index + 1 }));
@@ -75,12 +74,12 @@ export default function AddCourseScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="gap-5 pb-8">
       <ImportStepHeader
         onOptionsPress={() => Alert.alert("Options", "Options disponibles prochainement.")}
       />
 
-      <View style={styles.intro}>
+      <View className="gap-2">
         <AppText variant="heading">Prends en photo les pages de ton cours</AppText>
         <AppText tone="secondary">Tu peux ajouter plusieurs pages.</AppText>
       </View>
@@ -93,7 +92,7 @@ export default function AddCourseScreen() {
           onMoveRight={(id) => movePage(id, "right")}
         />
       ) : (
-        <AppCard style={styles.emptyCard}>
+        <AppCard className="gap-3">
           <AppText variant="subtitle">Aucune page ajoutée.</AppText>
           <AppText tone="secondary">
             Ajoute une page de démonstration pour continuer la compilation.
@@ -119,16 +118,3 @@ export default function AddCourseScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[5],
-    paddingBottom: spacing[8],
-  },
-  intro: {
-    gap: spacing[2],
-  },
-  emptyCard: {
-    gap: spacing[3],
-  },
-});

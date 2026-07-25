@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Image, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Image, ImageBackground, KeyboardAvoidingView, Platform, View } from "react-native";
 import { router } from "expo-router";
 import { OnboardingForm } from "@/src/components/core";
 import { AppButton, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { demoGrades, demoProfile, type DemoGrade } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 export default function OnboardingScreen() {
   const [firstName, setFirstName] = useState(demoProfile.firstName);
@@ -31,26 +31,26 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="pb-8 pt-1">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardArea}
+        className="gap-3"
       >
         <ImageBackground
           source={require("../../../assets/mianatra/pattern_lamba_horizontal.png")}
           resizeMode="cover"
-          imageStyle={styles.pattern}
-          style={styles.lamba}
+          imageStyle={{ opacity: 1 }}
+          className="h-[34px] overflow-hidden rounded-xl bg-[#FFFDF8]"
         />
 
-        <View style={styles.titleArea}>
-          <AppText variant="title" style={styles.brand}>
+        <View className="items-center gap-2 pt-3">
+          <AppText variant="title" className="text-[44px] leading-[50px] text-[#D94B24]">
             Mianatra
           </AppText>
-          <AppText variant="subtitle" style={styles.tagline}>
+          <AppText variant="subtitle" className="text-2xl leading-7">
             Tout Cours
           </AppText>
-          <AppText tone="secondary" style={styles.centered}>
+          <AppText tone="secondary" className="max-w-[300px] text-center">
             {"Faisons connaissance pour mieux t'accompagner."}
           </AppText>
         </View>
@@ -60,7 +60,7 @@ export default function OnboardingScreen() {
           accessibilityLabel="Deux lycéens en train d'étudier"
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          style={styles.illustration}
+          className="h-[190px] w-[90%] self-center"
         />
 
         <OnboardingForm
@@ -75,16 +75,23 @@ export default function OnboardingScreen() {
           onSelectGrade={setSelectedGrade}
         />
 
-        <View style={styles.footer}>
+        <View className="gap-2">
           <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
-          <View style={styles.footerRow}>
+          <View className="flex-row items-center justify-between gap-4">
             <AppText tone="secondary">1 sur 4</AppText>
             <AppButton
               title="Suivant"
               iconName="arrow-right"
               iconPosition="right"
               onPress={validateAndContinue}
-              style={styles.nextButton}
+              className="w-[68%] max-w-[260px] min-w-[220px]"
+              style={{
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
             />
           </View>
         </View>
@@ -92,71 +99,3 @@ export default function OnboardingScreen() {
     </AppScreen>
   );
 }
-
-
-const styles = StyleSheet.create({
-  screen: {
-    paddingTop: spacing[1],
-    paddingBottom: spacing[8],
-  },
-  keyboardArea: {
-    gap: spacing[3],
-  },
-  lamba: {
-    height: 34,
-    overflow: "hidden",
-    borderRadius: radius.medium,
-    backgroundColor: colors.surface,
-  },
-  pattern: {
-    opacity: 1,
-  },
-  titleArea: {
-    alignItems: "center",
-    gap: spacing[2],
-    paddingTop: spacing[3],
-  },
-  brand: {
-    color: colors.primary,
-    fontSize: 44,
-    lineHeight: 50,
-  },
-  tagline: {
-    fontSize: 24,
-    lineHeight: 28,
-  },
-  centered: {
-    maxWidth: 300,
-    textAlign: "center",
-  },
-  illustration: {
-    alignSelf: "center",
-    width: "90%",
-    height: 190,
-  },
-  footer: {
-    gap: spacing[2],
-  },
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing[4],
-  },
-  nextButton: {
-    minHeight: 54,
-    width: "68%",
-    maxWidth: 260,
-    minWidth: 220,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[2],
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing[6],
-    paddingVertical: spacing[3],
-  },
-});

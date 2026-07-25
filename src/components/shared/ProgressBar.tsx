@@ -1,13 +1,14 @@
-import { StyleSheet, View } from "react-native";
-import { colors, radius } from "@/src/theme";
+import { View } from "react-native";
+import { colors } from "@/src/theme";
 
 type ProgressBarProps = {
   value: number;
   accessibilityLabel?: string;
   color?: string;
+  className?: string;
 };
 
-export function ProgressBar({ value, accessibilityLabel, color = colors.secondary }: ProgressBarProps) {
+export function ProgressBar({ value, accessibilityLabel, color = colors.secondary, className }: ProgressBarProps) {
   const normalizedValue = Math.max(0, Math.min(100, value));
 
   return (
@@ -15,22 +16,9 @@ export function ProgressBar({ value, accessibilityLabel, color = colors.secondar
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min: 0, max: 100, now: normalizedValue }}
-      style={styles.track}
+      className={["h-2.5 overflow-hidden rounded-full bg-[#FAF1E2]", className].filter(Boolean).join(" ")}
     >
-      <View style={[styles.fill, { width: `${normalizedValue}%`, backgroundColor: color }]} />
+      <View className="h-full rounded-full" style={{ width: `${normalizedValue}%`, backgroundColor: color }} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  track: {
-    height: 10,
-    overflow: "hidden",
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceSoft,
-  },
-  fill: {
-    height: "100%",
-    borderRadius: radius.pill,
-  },
-});

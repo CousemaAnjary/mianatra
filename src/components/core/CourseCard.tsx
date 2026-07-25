@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppCard, AppText, ProgressBar } from "@/src/components/shared";
 import type { DemoCourse } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 type CourseCardProps = {
   course: DemoCourse;
@@ -23,15 +23,13 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Ouvrir ${course.subject}`}
       onPress={() => onPress(course)}
-      style={({ pressed }) => [pressed && styles.pressed]}
+      className="active:opacity-80"
     >
-      <AppCard style={styles.card}>
+      <AppCard className="flex-row items-center gap-4 p-4">
         <View
           accessibilityLabel={`Icône ${course.subject}`}
-          style={[
-            styles.icon,
-            { backgroundColor: courseIconBackground[course.id] ?? colors.secondary },
-          ]}
+          className="h-16 w-16 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: courseIconBackground[course.id] ?? colors.secondary }}
         >
           <FontAwesome5
             name={course.iconName ?? "book-open"}
@@ -39,9 +37,9 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
             color={colors.white}
           />
         </View>
-        <View style={styles.content}>
-          <View style={styles.titleRow}>
-            <View style={styles.titleGroup}>
+        <View className="flex-1 gap-2">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
               <AppText variant="subtitle">{course.subject}</AppText>
               <AppText tone="secondary">{course.chapters ?? course.pageCount} chapitres</AppText>
             </View>
@@ -57,34 +55,3 @@ export function CourseCard({ course, onPress }: CourseCardProps) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  pressed: {
-    opacity: 0.82,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-    padding: spacing[4],
-  },
-  icon: {
-    width: 64,
-    height: 64,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.large,
-  },
-  content: {
-    flex: 1,
-    gap: spacing[2],
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-  },
-  titleGroup: {
-    flex: 1,
-  },
-});

@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppText } from "@/src/components/shared";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 type AddPageButtonProps = {
   onPress: () => void;
@@ -13,28 +13,10 @@ export function AddPageButton({ onPress }: AddPageButtonProps) {
       accessibilityRole="button"
       accessibilityLabel="Ajouter une autre page de démonstration"
       onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      className="min-h-[76px] flex-row items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#D94B24] bg-[#FFFDF8] active:opacity-75"
     >
       <FontAwesome5 name="plus" size={20} color={colors.textPrimary} />
       <AppText variant="label">Ajouter une autre page</AppText>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    minHeight: 76,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing[3],
-    borderRadius: radius.large,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  pressed: {
-    opacity: 0.76,
-  },
-});

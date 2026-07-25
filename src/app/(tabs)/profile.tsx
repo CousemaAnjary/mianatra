@@ -1,4 +1,4 @@
-import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
+import { Alert, Image, Pressable, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import Svg, { Circle } from "react-native-svg";
 import { ProfileMenuRow } from "@/src/components/core";
@@ -14,7 +14,7 @@ import {
   demoProfileStats,
   type DemoProfileMenuItem,
 } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 export default function ProfileScreen() {
   function handleMenuPress(item: DemoProfileMenuItem) {
@@ -30,21 +30,21 @@ export default function ProfileScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="gap-5 pb-10">
       <ScreenHeader title="Profil" subtitle="Ton espace de progression" />
 
-      <View style={styles.identity}>
-        <View style={styles.avatarWrap}>
+      <View className="items-center gap-4">
+        <View className="h-[148px] w-[148px] items-center justify-center">
           <Image
             source={require("../../../assets/mianatra/illustration_student_reading.png")}
             accessibilityLabel="Avatar de Fara"
             accessibilityIgnoresInvertColors
-            style={styles.avatar}
+            className="h-[136px] w-[136px] rounded-full bg-[#FAF1E2]"
           />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Modifier le profil"
-            style={styles.editButton}
+            className="absolute bottom-2 right-1 h-[54px] w-[54px] items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
             onPress={() => Alert.alert("Profil", "Disponible prochainement")}
           >
             <FontAwesome5 name="pencil-alt" size={18} color={colors.primary} />
@@ -56,10 +56,10 @@ export default function ProfileScreen() {
         </AppText>
       </View>
 
-      <AppCard style={styles.progressCard}>
+      <AppCard className="gap-4">
         <AppText variant="subtitle">Ma progression globale</AppText>
-        <View style={styles.progressContent}>
-          <View style={styles.ring}>
+        <View className="flex-row items-center gap-4">
+          <View className="h-[118px] w-[118px] items-center justify-center">
             <Svg width={118} height={118} viewBox="0 0 118 118" accessibilityLabel="Progression globale 58 pour cent">
               <Circle cx="59" cy="59" r="46" stroke={colors.surfaceSoft} strokeWidth="10" fill="none" />
               <Circle
@@ -76,11 +76,11 @@ export default function ProfileScreen() {
                 origin="59, 59"
               />
             </Svg>
-            <View style={styles.ringLabel}>
+            <View className="absolute">
               <AppText variant="heading">{demoProfileStats.globalProgress}%</AppText>
             </View>
           </View>
-          <View style={styles.legend}>
+          <View className="flex-1 gap-3">
             <LegendRow color={colors.secondary} label="Maîtrisé" value={`${demoProfileStats.mastered} notions`} />
             <LegendRow color={colors.accent} label="En progression" value={`${demoProfileStats.progressing} notions`} />
             <LegendRow color={colors.primary} label="À renforcer" value={`${demoProfileStats.needsWork} notions`} />
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
         </View>
       </AppCard>
 
-      <AppCard style={styles.menuCard}>
+      <AppCard className="py-2">
         {demoProfileMenu.map((item) => (
           <ProfileMenuRow key={item.id} item={item} onPress={handleMenuPress} />
         ))}
@@ -99,83 +99,10 @@ export default function ProfileScreen() {
 
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <View style={styles.legendRow}>
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <AppText style={styles.legendLabel}>{label}</AppText>
+    <View className="flex-row items-center gap-2">
+      <View className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: color }} />
+      <AppText className="flex-1">{label}</AppText>
       <AppText variant="label">{value}</AppText>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[5],
-    paddingBottom: spacing[10],
-  },
-  identity: {
-    alignItems: "center",
-    gap: spacing[4],
-  },
-  avatarWrap: {
-    width: 148,
-    height: 148,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatar: {
-    width: 136,
-    height: 136,
-    borderRadius: 68,
-    backgroundColor: colors.surfaceSoft,
-  },
-  editButton: {
-    position: "absolute",
-    right: 4,
-    bottom: 8,
-    width: 54,
-    height: 54,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  progressCard: {
-    gap: spacing[4],
-  },
-  progressContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-  },
-  ring: {
-    width: 118,
-    height: 118,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ringLabel: {
-    position: "absolute",
-  },
-  legend: {
-    flex: 1,
-    gap: spacing[3],
-  },
-  legendRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  legendDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  legendLabel: {
-    flex: 1,
-  },
-  menuCard: {
-    paddingVertical: spacing[2],
-  },
-});

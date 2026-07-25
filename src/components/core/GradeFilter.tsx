@@ -1,7 +1,6 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { AppText } from "@/src/components/shared";
 import type { DemoGrade } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
 
 export type GradeFilterValue = "Tous" | DemoGrade;
 
@@ -13,7 +12,7 @@ type GradeFilterProps = {
 
 export function GradeFilter({ values, selectedValue, onChange }: GradeFilterProps) {
   return (
-    <View style={styles.row} accessibilityRole="tablist">
+    <View className="flex-row gap-2" accessibilityRole="tablist">
       {values.map((value) => {
         const isSelected = value === selectedValue;
 
@@ -24,7 +23,10 @@ export function GradeFilter({ values, selectedValue, onChange }: GradeFilterProp
             accessibilityLabel={`Filtre ${value}`}
             accessibilityState={{ selected: isSelected }}
             onPress={() => onChange(value)}
-            style={[styles.item, isSelected && styles.itemSelected]}
+            className={[
+              "min-h-12 flex-1 items-center justify-center rounded-2xl border",
+              isSelected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FAF1E2]",
+            ].join(" ")}
           >
             <AppText variant="label" tone={isSelected ? "inverse" : "primary"}>
               {value}
@@ -35,24 +37,3 @@ export function GradeFilter({ values, selectedValue, onChange }: GradeFilterProp
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: spacing[2],
-  },
-  item: {
-    minHeight: 48,
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.large,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSoft,
-  },
-  itemSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-});

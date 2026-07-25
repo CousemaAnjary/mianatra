@@ -1,24 +1,19 @@
-import { StyleSheet, View, type ViewProps } from "react-native";
-import { colors, radius, spacing } from "@/src/theme";
+import { View, type ViewProps } from "react-native";
 
 type AppCardProps = ViewProps & {
   children: React.ReactNode;
+  className?: string;
 };
 
-export function AppCard({ children, style, ...props }: AppCardProps) {
+export function AppCard({ children, className, ...props }: AppCardProps) {
   return (
-    <View {...props} style={[styles.card, style]}>
+    <View
+      {...props}
+      className={["rounded-[20px] border border-[#E8D9C7] bg-[#FFFDF8] p-5", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {children}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing[5],
-  },
-});

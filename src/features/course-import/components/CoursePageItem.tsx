@@ -1,8 +1,8 @@
-import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from "react-native";
+import { Image, Pressable, View, type ImageSourcePropType } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import type { DemoCoursePage } from "@/src/data/demo-data";
 import { AppText } from "@/src/components/shared";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 const pageImages: Record<DemoCoursePage["assetName"], ImageSourcePropType> = {
   sample_course_page_1: require("../../../../assets/mianatra/sample_course_page_1.png"),
@@ -33,15 +33,15 @@ export function CoursePageItem({
   const pageNumber = index + 1;
 
   return (
-    <View style={styles.card}>
+    <View className="aspect-[3/4] flex-1 overflow-hidden rounded-2xl border border-[#E8D9C7] bg-[#FAF1E2]">
       <Image
         source={pageImages[page.assetName]}
         accessibilityLabel={`${page.accessibilityLabel}, position ${pageNumber}`}
         accessibilityIgnoresInvertColors
         resizeMode="cover"
-        style={styles.image}
+        className="h-full w-full"
       />
-      <View style={styles.numberBadge}>
+      <View className="absolute bottom-3 left-3 h-11 w-11 items-center justify-center rounded-full bg-[#D94B24]">
         <AppText variant="label" tone="inverse">
           {pageNumber}
         </AppText>
@@ -50,18 +50,18 @@ export function CoursePageItem({
         accessibilityRole="button"
         accessibilityLabel={`Supprimer la page ${pageNumber}`}
         onPress={() => onRemove(page.id)}
-        style={styles.removeButton}
+        className="absolute right-2 top-2 h-11 w-11 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
       >
         <FontAwesome5 name="times" size={18} color={colors.textPrimary} />
       </Pressable>
-      <View style={styles.reorderRow}>
+      <View className="absolute bottom-2 right-2 flex-row gap-1">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Déplacer la page ${pageNumber} avant`}
           accessibilityState={{ disabled: !canMoveLeft }}
           disabled={!canMoveLeft}
           onPress={() => onMoveLeft(page.id)}
-          style={[styles.moveButton, !canMoveLeft && styles.disabledButton]}
+          className={["h-9 w-9 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveLeft ? "opacity-35" : ""].join(" ")}
         >
           <FontAwesome5 name="arrow-left" size={14} color={colors.textPrimary} />
         </Pressable>
@@ -71,7 +71,7 @@ export function CoursePageItem({
           accessibilityState={{ disabled: !canMoveRight }}
           disabled={!canMoveRight}
           onPress={() => onMoveRight(page.id)}
-          style={[styles.moveButton, !canMoveRight && styles.disabledButton]}
+          className={["h-9 w-9 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveRight ? "opacity-35" : ""].join(" ")}
         >
           <FontAwesome5 name="arrow-right" size={14} color={colors.textPrimary} />
         </Pressable>
@@ -79,63 +79,3 @@ export function CoursePageItem({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    aspectRatio: 3 / 4,
-    overflow: "hidden",
-    borderRadius: radius.large,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSoft,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  numberBadge: {
-    position: "absolute",
-    left: spacing[3],
-    bottom: spacing[3],
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-  },
-  removeButton: {
-    position: "absolute",
-    right: spacing[2],
-    top: spacing[2],
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  reorderRow: {
-    position: "absolute",
-    right: spacing[2],
-    bottom: spacing[2],
-    flexDirection: "row",
-    gap: spacing[1],
-  },
-  moveButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  disabledButton: {
-    opacity: 0.35,
-  },
-});

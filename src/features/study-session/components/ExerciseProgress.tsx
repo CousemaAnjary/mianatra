@@ -1,6 +1,5 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { AppText, ProgressBar } from "@/src/components/shared";
-import { spacing } from "@/src/theme";
 
 type ExerciseProgressProps = {
   current: number;
@@ -14,9 +13,9 @@ export function ExerciseProgress({ current, total }: ExerciseProgressProps) {
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: total, now: current }}
-      style={styles.container}
+      className="gap-2"
     >
-      <View style={styles.row}>
+      <View className="flex-row items-center justify-between">
         <AppText variant="label">Exercice {current} sur {total}</AppText>
         <AppText variant="caption" tone="secondary">
           {progress}%
@@ -26,14 +25,3 @@ export function ExerciseProgress({ current, total }: ExerciseProgressProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing[2],
-  },
-  row: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-});

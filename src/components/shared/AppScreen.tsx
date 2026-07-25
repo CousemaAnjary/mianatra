@@ -1,31 +1,33 @@
-import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, spacing } from "@/src/theme";
 
 type AppScreenProps = {
   children: React.ReactNode;
   scroll?: boolean;
   padded?: boolean;
-  contentStyle?: ViewStyle;
+  className?: string;
+  contentClassName?: string;
 };
 
 export function AppScreen({
   children,
   scroll = true,
   padded = true,
-  contentStyle,
+  className,
+  contentClassName,
 }: AppScreenProps) {
+  const paddedClassName = padded ? (scroll ? "p-5" : "flex-1 p-5") : "";
   const content = (
-    <View style={[padded && (scroll ? styles.scrollPadded : styles.padded), contentStyle]}>
+    <View className={[paddedClassName, contentClassName].filter(Boolean).join(" ")}>
       {children}
     </View>
   );
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
+    <SafeAreaView edges={["top", "left", "right"]} className={["flex-1 bg-[#FFF7E8]", className].filter(Boolean).join(" ")}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerClassName="grow"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -37,20 +39,3 @@ export function AppScreen({
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  padded: {
-    flex: 1,
-    padding: spacing[5],
-  },
-  scrollPadded: {
-    padding: spacing[5],
-  },
-});

@@ -1,10 +1,9 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { AppButton, AppCard, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { CourseProgressRing, CourseTopBar } from "@/src/features/courses/components";
 import { CourseResultSummary, RecentActivityList } from "@/src/features/progress/components";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
-import { spacing } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
@@ -17,9 +16,9 @@ export default function CourseResultsScreen() {
 
   if (!course || !results) {
     return (
-      <AppScreen contentStyle={styles.screen}>
+      <AppScreen contentClassName="gap-5 pb-8">
         <CourseTopBar title="Mes résultats" />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-3">
           <AppText variant="subtitle">Résultats indisponibles</AppText>
           <AppText tone="secondary">
             {"Aucun résultat de démonstration n'est disponible pour ce cours."}
@@ -35,9 +34,9 @@ export default function CourseResultsScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="gap-5 pb-8">
       <CourseTopBar title="Mes résultats" />
-      <View style={styles.titleBlock}>
+      <View className="gap-2">
         <AppText variant="title">Mes résultats</AppText>
         <AppText variant="subtitle" tone="secondary">
           {course.title}
@@ -46,11 +45,11 @@ export default function CourseResultsScreen() {
 
       <CourseResultSummary counters={results.counters} />
 
-      <AppCard style={styles.progressCard}>
+      <AppCard className="gap-4">
         <AppText variant="subtitle">Progression du chapitre</AppText>
-        <View style={styles.progressRow}>
+        <View className="flex-row items-center gap-4">
           <CourseProgressRing value={results.progress} size={88} />
-          <View style={styles.progressLine}>
+          <View className="flex-1 gap-2">
             <ProgressBar
               value={results.progress}
               accessibilityLabel={`Progression du chapitre : ${results.progress} pour cent`}
@@ -76,28 +75,3 @@ export default function CourseResultsScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[5],
-    paddingBottom: spacing[8],
-  },
-  titleBlock: {
-    gap: spacing[2],
-  },
-  card: {
-    gap: spacing[3],
-  },
-  progressCard: {
-    gap: spacing[4],
-  },
-  progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-  },
-  progressLine: {
-    flex: 1,
-    gap: spacing[2],
-  },
-});

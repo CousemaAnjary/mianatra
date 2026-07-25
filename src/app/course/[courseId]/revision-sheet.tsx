@@ -1,10 +1,9 @@
-import { Alert, StyleSheet } from "react-native";
+import { Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import { CourseTopBar } from "@/src/features/courses/components";
 import { RevisionSection } from "@/src/features/revision/components";
 import { demoCourses, demoRevisionSheet, demoSession } from "@/src/data/demo-data";
-import { spacing } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
@@ -17,9 +16,9 @@ export default function RevisionSheetScreen() {
 
   if (!course || !sheet) {
     return (
-      <AppScreen contentStyle={styles.screen}>
+      <AppScreen contentClassName="gap-4 pb-8">
         <CourseTopBar title="Ma fiche" />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-3">
           <AppText variant="subtitle">Fiche indisponible</AppText>
           <AppText tone="secondary">
             {"Aucune fiche de démonstration n'est disponible pour ce cours."}
@@ -35,7 +34,7 @@ export default function RevisionSheetScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="gap-4 pb-8">
       <CourseTopBar
         title="Ma fiche"
         onOptionsPress={() =>
@@ -65,13 +64,3 @@ export default function RevisionSheetScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[4],
-    paddingBottom: spacing[8],
-  },
-  card: {
-    gap: spacing[3],
-  },
-});

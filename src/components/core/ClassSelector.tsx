@@ -1,5 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
-import { colors, radius, spacing } from "@/src/theme";
+import { Pressable, View } from "react-native";
 import type { DemoGrade } from "@/src/data/demo-data";
 import { AppText } from "@/src/components/shared";
 
@@ -11,7 +10,7 @@ type ClassSelectorProps = {
 
 export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelectorProps) {
   return (
-    <View style={styles.row} accessibilityRole="radiogroup">
+    <View className="flex-row gap-2" accessibilityRole="radiogroup">
       {grades.map((grade) => {
         const isSelected = grade === selectedGrade;
 
@@ -22,7 +21,10 @@ export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelector
             accessibilityLabel={`Classe ${grade}`}
             accessibilityState={{ selected: isSelected }}
             onPress={() => onSelect(grade)}
-            style={[styles.option, isSelected && styles.optionSelected]}
+            className={[
+              "min-h-[52px] flex-1 items-center justify-center rounded-2xl border",
+              isSelected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FFFDF8]",
+            ].join(" ")}
           >
             <AppText variant="label" tone={isSelected ? "inverse" : "primary"}>
               {grade}
@@ -33,24 +35,3 @@ export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelector
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: spacing[2],
-  },
-  option: {
-    minHeight: 52,
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.large,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  optionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-});

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   AppButton,
@@ -16,7 +16,6 @@ import {
   HintPanel,
 } from "@/src/features/study-session/components";
 import { useDemoSession } from "@/src/features/study-session/context/DemoSessionProvider";
-import { spacing } from "@/src/theme";
 
 export function generateStaticParams() {
   return [{ sessionId: demoSession.id }];
@@ -87,7 +86,7 @@ export default function SessionScreen() {
     return (
       <AppScreen>
         <ScreenHeader title="Session d'exercices" subtitle="Série indisponible" showBack />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-4">
           <AppText variant="subtitle">{"Impossible d'ouvrir cette série"}</AppText>
           <AppText tone="secondary">
             {state.message ?? "Aucun exercice n'est disponible pour cette session."}
@@ -108,10 +107,10 @@ export default function SessionScreen() {
         title={state.mode === "targeted" ? "Série ciblée" : "Session d'exercices"}
         subtitle="Fonctions du second degré"
       />
-      <View style={styles.stack}>
+      <View className="gap-4">
         <ExerciseProgress current={state.currentIndex + 1} total={state.exercises.length} />
         <ExerciseContent exercise={currentExercise} />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-4">
           <ExerciseAnswerControl
             answer={answer}
             exercise={currentExercise}
@@ -126,7 +125,7 @@ export default function SessionScreen() {
               {errorMessage}
             </AppText>
           ) : null}
-          <View style={styles.actions}>
+          <View className="gap-3">
             <AppButton
               title={state.hintsUsed[currentExercise.id] ? "Indice affiché" : "Voir un indice"}
               iconName="lightbulb"
@@ -147,15 +146,3 @@ export default function SessionScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  stack: {
-    gap: spacing[4],
-  },
-  card: {
-    gap: spacing[4],
-  },
-  actions: {
-    gap: spacing[3],
-  },
-});

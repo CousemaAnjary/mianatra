@@ -1,8 +1,8 @@
-import { Image, StyleSheet, View } from "react-native";
+import { Image, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppButton, AppCard, AppText, StatusBadge } from "@/src/components/shared";
 import type { DemoCourse } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 type RecommendationCardProps = {
   course: DemoCourse;
@@ -11,16 +11,16 @@ type RecommendationCardProps = {
 
 export function RecommendationCard({ course, onContinue }: RecommendationCardProps) {
   return (
-    <AppCard style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.copy}>
+    <AppCard className="gap-4 border-[#F2B84B] bg-[#F2B84B]">
+      <View className="flex-row items-center gap-3">
+        <View className="flex-1 gap-2">
           <AppText variant="label">À faire maintenant</AppText>
           <AppText variant="heading">{course.subject}</AppText>
           <AppText variant="subtitle">{course.title}</AppText>
           <AppText tone="secondary">
             Tu avais des difficultés sur la lecture des graphiques.
           </AppText>
-          <View style={styles.duration}>
+          <View className="flex-row items-center gap-2">
             <FontAwesome5 name="clock" size={16} color={colors.textSecondary} />
             <AppText tone="secondary">Environ 10 minutes</AppText>
           </View>
@@ -29,7 +29,7 @@ export function RecommendationCard({ course, onContinue }: RecommendationCardPro
           source={require("../../../assets/mianatra/image_mini_function_graph.png")}
           accessibilityLabel="Miniature du graphique de fonction"
           accessibilityIgnoresInvertColors
-          style={styles.image}
+          className="h-[108px] w-[108px] rotate-3 rounded-2xl border-[3px] border-[#FFFDF8]"
         />
       </View>
       <StatusBadge label="Lecture des graphiques" tone="progress" />
@@ -42,33 +42,3 @@ export function RecommendationCard({ course, onContinue }: RecommendationCardPro
     </AppCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing[4],
-    borderColor: colors.accent,
-    backgroundColor: colors.accent,
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-  },
-  copy: {
-    flex: 1,
-    gap: spacing[2],
-  },
-  duration: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  image: {
-    width: 108,
-    height: 108,
-    borderRadius: radius.large,
-    borderWidth: 3,
-    borderColor: colors.surface,
-    transform: [{ rotate: "3deg" }],
-  },
-});

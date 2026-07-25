@@ -1,12 +1,15 @@
-import { ActivityIndicator, StyleSheet, type PressableProps } from "react-native";
+import { ActivityIndicator } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Button, ButtonText } from "@/src/components/ui/button";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 type AppButtonVariant = "primary" | "secondary" | "tertiary";
 type ButtonIconName = React.ComponentProps<typeof FontAwesome5>["name"];
 
-type AppButtonProps = PressableProps & {
+type AppButtonProps = Omit<
+  React.ComponentProps<typeof Button>,
+  "action" | "children" | "size" | "variant"
+> & {
   title: string;
   variant?: AppButtonVariant;
   loading?: boolean;
@@ -22,12 +25,22 @@ export function AppButton({
   iconName,
   iconPosition = "left",
   style,
+  className,
   accessibilityLabel,
   ...props
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
-  const textTone = variant === "primary" ? "inverse" : "primary";
+  const textClassName = variant === "primary" ? "text-white" : "text-[#2F241F]";
   const iconColor = variant === "primary" ? colors.white : colors.textPrimary;
+  const rootClassName = [
+    "min-h-[54px] min-w-11 flex-row items-center justify-center gap-2 rounded-full border px-6 py-3 active:opacity-80 disabled:opacity-50",
+    variant === "primary" ? "border-[#D94B24] bg-[#D94B24]" : "",
+    variant === "secondary" ? "border-[#E8D9C7] bg-[#FFF7E8]" : "",
+    variant === "tertiary" ? "border-[#F2B84B] bg-[#FFF3D2]" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   const icon = iconName ? (
     <FontAwesome5 name={iconName} size={16} color={iconColor} />
   ) : null;
@@ -38,24 +51,19 @@ export function AppButton({
       action={variant === "primary" ? "primary" : "secondary"}
       variant={variant === "primary" || variant === "tertiary" ? "solid" : "outline"}
       size="xl"
+      className={rootClassName}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      style={(state) => [
-        styles.base,
-        styles[variant],
-        state.pressed && !isDisabled && styles.pressed,
-        isDisabled && styles.disabled,
-        typeof style === "function" ? style(state) : style,
-      ]}
+      style={style}
     >
       {loading ? (
         <ActivityIndicator color={variant === "primary" ? colors.white : colors.primary} />
       ) : (
         <>
           {iconPosition === "left" ? icon : null}
-          <ButtonText style={[styles.text, { color: textTone === "inverse" ? colors.white : colors.textPrimary }]}>
+          <ButtonText className={["text-base font-bold leading-5 tracking-normal", textClassName].join(" ")}>
             {title}
           </ButtonText>
           {iconPosition === "right" ? icon : null}
@@ -64,44 +72,3 @@ export function AppButton({
     </Button>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    minHeight: 54,
-    minWidth: 44,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[2],
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing[6],
-    paddingVertical: spacing[3],
-  },
-  primary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    borderWidth: 1.5,
-  },
-  secondary: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1.5,
-  },
-  tertiary: {
-    backgroundColor: colors.surfaceSoft,
-    borderColor: colors.border,
-    borderWidth: 1.5,
-  },
-  pressed: {
-    opacity: 0.82,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0,
-    lineHeight: 20,
-  },
-});

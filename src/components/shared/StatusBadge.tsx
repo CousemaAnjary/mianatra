@@ -1,5 +1,5 @@
-import { StyleSheet, View } from "react-native";
-import { colors, radius, spacing } from "@/src/theme";
+import { View } from "react-native";
+import { colors } from "@/src/theme";
 import { AppText } from "./AppText";
 
 type StatusBadgeTone = "success" | "progress" | "warning";
@@ -17,22 +17,10 @@ const badgeColor: Record<StatusBadgeTone, string> = {
 
 export function StatusBadge({ label, tone = "progress" }: StatusBadgeProps) {
   return (
-    <View style={[styles.badge, { borderColor: badgeColor[tone] }]}>
+    <View className="min-h-8 self-start justify-center rounded-full border bg-[#FFFDF8] px-3" style={{ borderColor: badgeColor[tone] }}>
       <AppText variant="caption" tone="primary">
         {label}
       </AppText>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    minHeight: 32,
-    alignSelf: "flex-start",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    paddingHorizontal: spacing[3],
-    backgroundColor: colors.surface,
-  },
-});

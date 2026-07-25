@@ -1,7 +1,6 @@
-import { Image, StyleSheet, View } from "react-native";
+import { Image, View } from "react-native";
 import { AppCard, AppText, StatusBadge } from "@/src/components/shared";
 import type { DemoExercise } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
 
 type ExerciseContentProps = {
   exercise: DemoExercise;
@@ -9,8 +8,8 @@ type ExerciseContentProps = {
 
 export function ExerciseContent({ exercise }: ExerciseContentProps) {
   return (
-    <AppCard accessibilityLabel={`Exercice ${exercise.title}`} style={styles.card}>
-      <View style={styles.badges}>
+    <AppCard accessibilityLabel={`Exercice ${exercise.title}`} className="gap-4">
+      <View className="flex-row flex-wrap gap-2">
         <StatusBadge label={exercise.conceptName} tone="progress" />
         {exercise.generatedFromWeakness ? (
           <StatusBadge label="Série ciblée" tone="warning" />
@@ -22,34 +21,13 @@ export function ExerciseContent({ exercise }: ExerciseContentProps) {
           accessibilityIgnoresInvertColors
           accessibilityLabel="Graphique d'une parabole utilisé pour répondre à l'exercice"
           resizeMode="cover"
-          style={styles.image}
+          className="h-[220px] w-full rounded-2xl border border-[#E8D9C7]"
         />
       ) : null}
-      <View style={styles.questionGroup}>
+      <View className="gap-2">
         <AppText variant="subtitle">{exercise.title}</AppText>
         <AppText tone="secondary">{exercise.question}</AppText>
       </View>
     </AppCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing[4],
-  },
-  badges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-  image: {
-    width: "100%",
-    height: 220,
-    borderColor: colors.border,
-    borderRadius: radius.large,
-    borderWidth: 1,
-  },
-  questionGroup: {
-    gap: spacing[2],
-  },
-});

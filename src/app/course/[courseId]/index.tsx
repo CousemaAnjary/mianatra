@@ -1,4 +1,4 @@
-import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
+import { Alert, Image, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import {
@@ -14,7 +14,7 @@ import {
   CourseTopBar,
 } from "@/src/features/courses/components";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
@@ -26,9 +26,9 @@ export default function CourseDetailScreen() {
 
   if (!course) {
     return (
-      <AppScreen contentStyle={styles.screen}>
+      <AppScreen contentClassName="gap-5 pb-8">
         <CourseTopBar title="Cours introuvable" />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-4">
           <AppText variant="subtitle">Cours introuvable</AppText>
           <AppText tone="secondary">
             {"Ce cours de démonstration n'existe pas ou n'est pas disponible."}
@@ -53,11 +53,11 @@ export default function CourseDetailScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
+    <AppScreen contentClassName="gap-5 pb-8">
       <CourseTopBar title={course.subject} onOptionsPress={showOptions} />
 
-      <View style={styles.hero}>
-        <View style={styles.heroCopy}>
+      <View className="flex-row items-center gap-4">
+        <View className="flex-1 gap-3">
           <AppText variant="title">{course.title}</AppText>
           <AppText variant="subtitle" tone="secondary">
             {course.pageCount} pages de cours • Dernière révision : {course.lastRevision}
@@ -68,7 +68,7 @@ export default function CourseDetailScreen() {
           accessibilityLabel="Élève lisant son cours"
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          style={styles.heroImage}
+          className="h-40 w-[130px] rounded-2xl"
         />
       </View>
 
@@ -126,7 +126,7 @@ export default function CourseDetailScreen() {
           })
         }
       />
-      <View style={styles.secondaryActions}>
+      <View className="flex-row gap-3">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Faire des exercices"
@@ -136,7 +136,7 @@ export default function CourseDetailScreen() {
               params: { sessionId: demoSession.id },
             })
           }
-          style={styles.secondaryButton}
+          className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
         >
           <FontAwesome5 name="pen" size={16} color={colors.textPrimary} />
           <AppText variant="label">Faire des exercices</AppText>
@@ -150,7 +150,7 @@ export default function CourseDetailScreen() {
               params: { courseId: course.id },
             })
           }
-          style={styles.secondaryButton}
+          className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
         >
           <FontAwesome5 name="chart-line" size={16} color={colors.textPrimary} />
           <AppText variant="label">Voir mes résultats</AppText>
@@ -159,43 +159,3 @@ export default function CourseDetailScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[5],
-    paddingBottom: spacing[8],
-  },
-  card: {
-    gap: spacing[4],
-  },
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-  },
-  heroCopy: {
-    flex: 1,
-    gap: spacing[3],
-  },
-  heroImage: {
-    width: 130,
-    height: 160,
-    borderRadius: radius.large,
-  },
-  secondaryActions: {
-    flexDirection: "row",
-    gap: spacing[3],
-  },
-  secondaryButton: {
-    minHeight: 58,
-    flex: 1,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[2],
-    justifyContent: "center",
-    borderRadius: radius.large,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-});

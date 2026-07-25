@@ -1,8 +1,8 @@
-import { StyleSheet, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppText } from "@/src/components/shared";
 import type { DemoGrade } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 import { ClassSelector } from "./ClassSelector";
 
 type OnboardingFormProps = {
@@ -29,10 +29,10 @@ export function OnboardingForm({
   onSelectGrade,
 }: OnboardingFormProps) {
   return (
-    <View style={styles.form}>
-      <View style={styles.field}>
+    <View className="gap-3">
+      <View className="gap-2">
         <AppText variant="label">{"Comment veux-tu qu'on t'appelle ?"}</AppText>
-        <View style={[styles.inputWrap, nameError && styles.inputError]}>
+        <View className={["min-h-[52px] flex-row items-center gap-3 rounded-2xl border bg-[#FFFDF8] px-4", nameError ? "border-[#B53434]" : "border-[#E8D9C7]"].join(" ")}>
           <FontAwesome5 name="user" size={20} color={colors.textSecondary} />
           <TextInput
             accessibilityLabel="Prénom ou pseudonyme"
@@ -40,7 +40,7 @@ export function OnboardingForm({
             onChangeText={onChangeFirstName}
             placeholder="Fara"
             placeholderTextColor={colors.textMuted}
-            style={styles.input}
+            className="min-h-[50px] flex-1 text-[17px] font-bold text-[#2F241F]"
             returnKeyType="next"
           />
         </View>
@@ -51,9 +51,9 @@ export function OnboardingForm({
         ) : null}
       </View>
 
-      <View style={styles.field}>
+      <View className="gap-2">
         <AppText variant="label">Quel âge as-tu ?</AppText>
-        <View style={[styles.inputWrap, ageError && styles.inputError]}>
+        <View className={["min-h-[52px] flex-row items-center gap-3 rounded-2xl border bg-[#FFFDF8] px-4", ageError ? "border-[#B53434]" : "border-[#E8D9C7]"].join(" ")}>
           <FontAwesome5 name="birthday-cake" size={20} color={colors.textSecondary} />
           <TextInput
             accessibilityLabel="Âge"
@@ -62,7 +62,7 @@ export function OnboardingForm({
             placeholder="17"
             placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
-            style={styles.input}
+            className="min-h-[50px] flex-1 text-[17px] font-bold text-[#2F241F]"
           />
           <AppText tone="secondary">ans</AppText>
         </View>
@@ -73,7 +73,7 @@ export function OnboardingForm({
         ) : null}
       </View>
 
-      <View style={styles.field}>
+      <View className="gap-2">
         <AppText variant="label">Quelle est ta classe ?</AppText>
         <ClassSelector
           grades={grades}
@@ -84,33 +84,3 @@ export function OnboardingForm({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  form: {
-    gap: spacing[3],
-  },
-  field: {
-    gap: spacing[2],
-  },
-  inputWrap: {
-    minHeight: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-    borderRadius: radius.large,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing[4],
-    backgroundColor: colors.surface,
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  input: {
-    flex: 1,
-    minHeight: 50,
-    color: colors.textPrimary,
-    fontSize: 17,
-    fontWeight: "700",
-  },
-});

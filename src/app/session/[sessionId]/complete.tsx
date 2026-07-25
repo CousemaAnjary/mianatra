@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { AppButton, AppCard, AppScreen, AppText, ScreenHeader } from "@/src/components/shared";
 import { demoSession } from "@/src/data/demo-data";
 import { SessionReport } from "@/src/features/study-session/components";
 import { useDemoSession } from "@/src/features/study-session/context/DemoSessionProvider";
-import { spacing } from "@/src/theme";
 
 export function generateStaticParams() {
   return [{ sessionId: demoSession.id }];
@@ -40,7 +39,7 @@ export default function SessionCompleteScreen() {
     return (
       <AppScreen>
         <ScreenHeader title="Rapport de séance" subtitle="Série indisponible" showBack />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-4">
           <AppText variant="subtitle">Rapport indisponible</AppText>
           <AppText tone="secondary">
             {state.message ?? "Cette session ne permet pas de générer un rapport."}
@@ -55,7 +54,7 @@ export default function SessionCompleteScreen() {
     return (
       <AppScreen>
         <ScreenHeader title="Rapport de séance" subtitle="Session en cours" showBack />
-        <AppCard style={styles.card}>
+        <AppCard className="gap-4">
           <AppText variant="subtitle">Termine la série pour voir ton rapport</AppText>
           <AppText tone="secondary">
             Le rapport est construit quand tous les exercices de la série ont une tentative.
@@ -78,9 +77,9 @@ export default function SessionCompleteScreen() {
   return (
     <AppScreen>
       <ScreenHeader title="Rapport de séance" subtitle="Session terminée" showBack />
-      <View style={styles.stack}>
+      <View className="gap-4">
         <SessionReport summary={summary} />
-        <View style={styles.actions}>
+        <View className="gap-3">
           <AppButton title="Faire une série ciblée" iconName="bullseye" onPress={handleTargeted} />
           <AppButton
             title="Voir mes résultats"
@@ -104,15 +103,3 @@ export default function SessionCompleteScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  stack: {
-    gap: spacing[4],
-  },
-  card: {
-    gap: spacing[4],
-  },
-  actions: {
-    gap: spacing[3],
-  },
-});

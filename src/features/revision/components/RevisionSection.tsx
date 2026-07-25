@@ -1,7 +1,6 @@
-import { Image, StyleSheet, type ImageSourcePropType } from "react-native";
+import { Image, type ImageSourcePropType } from "react-native";
 import { AppCard, AppText } from "@/src/components/shared";
 import type { DemoRevisionSection } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
 
 const revisionImages: Record<"function-graph", ImageSourcePropType> = {
   "function-graph": require("../../../../assets/mianatra/image_function_graph_exercise.png"),
@@ -13,7 +12,7 @@ type RevisionSectionProps = {
 
 export function RevisionSection({ section }: RevisionSectionProps) {
   return (
-    <AppCard style={styles.card}>
+    <AppCard className="gap-3">
       <AppText variant="subtitle">{section.title}</AppText>
       {section.text ? <AppText tone="secondary">{section.text}</AppText> : null}
       {section.image ? (
@@ -22,11 +21,11 @@ export function RevisionSection({ section }: RevisionSectionProps) {
           accessibilityLabel={`Illustration : ${section.title}`}
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          style={styles.image}
+          className="h-[190px] w-full rounded-2xl bg-[#FFFDF8]"
         />
       ) : null}
       {section.formula ? (
-        <AppText variant="heading" style={styles.formula}>
+        <AppText variant="heading" className="italic">
           {section.formula}
         </AppText>
       ) : null}
@@ -36,18 +35,3 @@ export function RevisionSection({ section }: RevisionSectionProps) {
     </AppCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing[3],
-  },
-  image: {
-    width: "100%",
-    height: 190,
-    borderRadius: radius.large,
-    backgroundColor: colors.surface,
-  },
-  formula: {
-    fontStyle: "italic",
-  },
-});

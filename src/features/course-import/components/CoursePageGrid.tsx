@@ -1,6 +1,5 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import type { DemoCoursePage } from "@/src/data/demo-data";
-import { spacing } from "@/src/theme";
 import { CoursePageItem } from "./CoursePageItem";
 
 type CoursePageGridProps = {
@@ -17,9 +16,9 @@ export function CoursePageGrid({
   onMoveRight,
 }: CoursePageGridProps) {
   return (
-    <View style={styles.grid}>
+    <View className="flex-row flex-wrap gap-3">
       {pages.map((page, index) => (
-        <View key={page.id} style={styles.cell}>
+        <View key={page.id} className="w-[48%]">
           <CoursePageItem
             page={page}
             index={index}
@@ -34,14 +33,3 @@ export function CoursePageGrid({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[3],
-  },
-  cell: {
-    width: "48%",
-  },
-});

@@ -1,6 +1,6 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { AppCard, AppText } from "@/src/components/shared";
-import { colors, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 import { CourseProgressRing } from "./CourseProgressRing";
 
 type CourseProgressCardProps = {
@@ -17,11 +17,11 @@ export function CourseProgressCard({
   needsWork,
 }: CourseProgressCardProps) {
   return (
-    <AppCard style={styles.card}>
+    <AppCard className="gap-4 bg-[#FAF1E2]">
       <AppText variant="subtitle">Progression du chapitre</AppText>
-      <View style={styles.content}>
+      <View className="flex-row items-center gap-4">
         <CourseProgressRing value={progress} />
-        <View style={styles.legend}>
+        <View className="flex-1 gap-3">
           <LegendRow color={colors.secondary} label="Maîtrisé" value={`${mastered} notions`} />
           <LegendRow color={colors.accent} label="En progression" value={`${progressing} notions`} />
           <LegendRow color={colors.primary} label="À renforcer" value={`${needsWork} notions`} />
@@ -33,39 +33,10 @@ export function CourseProgressCard({
 
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <View style={styles.legendRow}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <AppText style={styles.legendLabel}>{label}</AppText>
+    <View className="flex-row items-center gap-2">
+      <View className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: color }} />
+      <AppText className="flex-1">{label}</AppText>
       <AppText variant="label">{value}</AppText>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing[4],
-    backgroundColor: colors.surfaceSoft,
-  },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-  },
-  legend: {
-    flex: 1,
-    gap: spacing[3],
-  },
-  legendRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  legendLabel: {
-    flex: 1,
-  },
-});

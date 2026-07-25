@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { CourseCard, RecommendationCard } from "@/src/components/core";
@@ -9,7 +9,7 @@ import {
   StatusBadge,
 } from "@/src/components/shared";
 import { demoCourse, demoHomeCourses, demoProfile, demoSession, type DemoCourse } from "@/src/data/demo-data";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 export default function HomeScreen() {
   function openCourse(course: DemoCourse) {
@@ -20,9 +20,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <AppScreen contentStyle={styles.screen}>
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
+    <AppScreen contentClassName="gap-5 pb-10">
+      <View className="flex-row items-start gap-3">
+        <View className="flex-1 gap-2">
           <AppText variant="title">{`Bonjour ${demoProfile.firstName} 👋`}</AppText>
           <AppText variant="subtitle" tone="secondary">
             Prête pour une petite révision ?
@@ -34,13 +34,13 @@ export default function HomeScreen() {
           onPress={() =>
             Alert.alert("Notifications", "Aucune nouvelle notification pour cette démonstration.")
           }
-          style={styles.notificationButton}
+          className="h-12 w-12 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
         >
           <FontAwesome5 name="bell" size={22} color={colors.textPrimary} />
         </Pressable>
       </View>
 
-      <View style={styles.streakWrap}>
+      <View className="-mt-3 self-end">
         <StatusBadge label="4 jours de suite" tone="warning" />
       </View>
 
@@ -54,13 +54,13 @@ export default function HomeScreen() {
         }
       />
 
-      <View style={styles.sectionHeader}>
+      <View className="flex-row items-center justify-between gap-3">
         <AppText variant="heading">Mes cours</AppText>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Voir tous les cours"
           onPress={() => router.push("/courses")}
-          style={styles.linkButton}
+          className="min-h-11 justify-center active:opacity-80"
         >
           <AppText variant="label" tone="secondary">
             Voir tout
@@ -68,7 +68,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.courseList}>
+      <View className="gap-3">
         {demoHomeCourses.map((course) => (
           <CourseCard key={course.id} course={course} onPress={openCourse} />
         ))}
@@ -82,46 +82,3 @@ export default function HomeScreen() {
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    gap: spacing[5],
-    paddingBottom: spacing[10],
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing[3],
-  },
-  headerCopy: {
-    flex: 1,
-    gap: spacing[2],
-  },
-  notificationButton: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  streakWrap: {
-    alignSelf: "flex-end",
-    marginTop: -spacing[3],
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing[3],
-  },
-  linkButton: {
-    minHeight: 44,
-    justifyContent: "center",
-  },
-  courseList: {
-    gap: spacing[3],
-  },
-});

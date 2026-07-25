@@ -1,6 +1,5 @@
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { router } from "expo-router";
-import { colors, spacing } from "@/src/theme";
 import { AppButton } from "./AppButton";
 import { AppCard } from "./AppCard";
 import { AppScreen } from "./AppScreen";
@@ -21,8 +20,8 @@ export function ScreenPlaceholder({
   return (
     <AppScreen>
       <ScreenHeader title={title} showBack={showBack} />
-      <View style={styles.content}>
-        <AppCard style={styles.card}>
+      <View className="flex-1 justify-center">
+        <AppCard className="gap-4">
           <AppText variant="subtitle">{title}</AppText>
           <AppText tone="secondary">{description}</AppText>
           {showBack ? (
@@ -38,14 +37,3 @@ export function ScreenPlaceholder({
     </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  card: {
-    gap: spacing[4],
-    backgroundColor: colors.surface,
-  },
-});
