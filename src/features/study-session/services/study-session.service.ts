@@ -33,6 +33,7 @@ type StudySessionServiceDeps = {
   attempts: {
     create: (input: CreateAttemptInput) => Promise<ExerciseAttempt>;
     findAllByExercise: (exerciseId: string) => Promise<ExerciseAttempt[]>;
+    findAllBySession: (sessionId: string) => Promise<ExerciseAttempt[]>;
     submitWithProgress: (input: SubmitAttemptWithProgressInput) => Promise<{ attempt: ExerciseAttempt }>;
   };
   courses: {
@@ -111,6 +112,15 @@ export function createStudySessionService(deps: StudySessionServiceDeps) {
       if (!exercise || exercise.courseId !== session.courseId) {
         throw new ExerciseNotFoundError();
       }
+      const sessionAttempts = await deps.attempts.findAllBySession(session.id);
+      if (sessionAttempts.some((attempt) => attempt.exerciseId === exercise.id)) {
+        throw new InvalidSessionStateError("This exercise already has a finalized attempt.");
+      }
+      const sessionExercises = await deps.exercises.findAllByCourse(session.courseId);
+      const exerciseIndex = sessionExercises.findIndex((sessionExercise) => sessionExercise.id === exercise.id);
+      if (exerciseIndex < 0 || exerciseIndex !== session.currentExerciseIndex) {
+        throw new InvalidSessionStateError("Submitted exercise does not match the current session exercise.");
+      }
       const validation = validateExerciseAnswer(exercise, input.answer);
       if (!validation.normalizedAnswer) {
         throw new InvalidAnswerError();
@@ -138,6 +148,10 @@ export function createStudySessionService(deps: StudySessionServiceDeps) {
             attemptsCount,
             correctCount,
           },
+        },
+        sessionIndex: {
+          sessionId: session.id,
+          currentExerciseIndex: Math.min(session.currentExerciseIndex + 1, Math.max(sessionExercises.length - 1, 0)),
         },
       });
       return { attempt: result.attempt, validation };

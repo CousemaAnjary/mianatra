@@ -225,6 +225,7 @@ const sessionService = createStudySessionService({
       throw new Error("submitAnswer must use submitWithProgress");
     },
     findAllByExercise: async (exerciseId) => attempts.filter((attempt) => attempt.exerciseId === exerciseId),
+    findAllBySession: async (sessionId) => attempts.filter((attempt) => attempt.sessionId === sessionId),
     submitWithProgress: async (input) => {
       const attempt = {
         id: `attempt-${attempts.length + 1}`,

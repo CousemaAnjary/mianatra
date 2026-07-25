@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "../client";
 import { createId, nowIso } from "../helpers";
 import { exercises } from "../schema";
@@ -25,7 +25,7 @@ async function findById(id: string): Promise<Exercise | null> {
 }
 
 async function findAllByCourse(courseId: string): Promise<Exercise[]> {
-  return db.select().from(exercises).where(eq(exercises.courseId, courseId)).all();
+  return db.select().from(exercises).where(eq(exercises.courseId, courseId)).orderBy(asc(exercises.createdAt), asc(exercises.id)).all();
 }
 
 async function findAllByConcept(conceptId: string): Promise<Exercise[]> {

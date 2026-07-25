@@ -18,11 +18,11 @@ function buildRecommendation(correct: number, total: number) {
   if (total === 0) {
     return "Relancer une séance avec des exercices ciblés.";
   }
-  const score = correct / total;
-  if (score >= 0.85) {
+  const score = total === 0 ? 0 : (correct / total) * 100;
+  if (score >= 85) {
     return "Continuer avec une nouvelle série d'exercices.";
   }
-  if (score >= 0.5) {
+  if (score >= 50) {
     return "Revoir les notions avec des erreurs récentes.";
   }
   return "Reprendre le cours avant une nouvelle tentative.";
@@ -38,6 +38,7 @@ type ReportServiceDeps = {
   reports: {
     findBySession: (sessionId: string) => Promise<SessionReport | null>;
     create: (input: CreateSessionReportInput) => Promise<SessionReport>;
+    replaceForSession: (input: CreateSessionReportInput) => Promise<SessionReport>;
   };
   sessions: {
     findById: (id: string) => Promise<StudySession | null>;
@@ -48,10 +49,6 @@ export function createReportService(deps: ReportServiceDeps) {
   return {
     getSessionReport: (sessionId: string) => deps.reports.findBySession(sessionId),
     buildSessionReport: async (sessionId: string) => {
-      const existingReport = await deps.reports.findBySession(sessionId);
-      if (existingReport) {
-        return existingReport;
-      }
       const session = await deps.sessions.findById(sessionId);
       if (!session) {
         throw new SessionNotFoundError();
@@ -77,16 +74,19 @@ export function createReportService(deps: ReportServiceDeps) {
       });
       const strongConceptId = rankedConcepts[0]?.[0] ?? null;
       const weakConceptId = rankedConcepts.at(-1)?.[0] ?? null;
-      return deps.reports.create({
+      const reportInput = {
         sessionId,
-        score: totalAnswers === 0 ? 0 : correctAnswers / totalAnswers,
+        score: totalAnswers === 0 ? 0 : Math.round((correctAnswers / totalAnswers) * 100),
         correctAnswers,
         totalAnswers,
         strongConceptId: strongConceptId === weakConceptId ? null : strongConceptId,
         weakConceptId,
         summary: buildSummary(correctAnswers, totalAnswers),
         recommendation: buildRecommendation(correctAnswers, totalAnswers),
-      });
+      };
+      return (await deps.reports.findBySession(sessionId))
+        ? deps.reports.replaceForSession(reportInput)
+        : deps.reports.create(reportInput);
     },
   };
 }

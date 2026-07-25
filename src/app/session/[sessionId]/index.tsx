@@ -9,7 +9,11 @@ import {
   ScreenHeader,
 } from "@/src/components/shared";
 import { demoSession } from "@/src/data/demo-data";
-import { loadRealSessionView, type RealSessionView } from "@/src/features/study-session/services/real-session-view.service";
+import {
+  loadRealSessionView,
+  submitRealSessionAnswer,
+  type RealSessionView,
+} from "@/src/features/study-session/services/real-session-view.service";
 import {
   ExerciseAnswerControl,
   ExerciseContent,
@@ -31,6 +35,8 @@ export default function SessionScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [realAnswer, setRealAnswer] = useState("");
   const [realHintShown, setRealHintShown] = useState(false);
+  const [isSubmittingRealAnswer, setIsSubmittingRealAnswer] = useState(false);
+  const realCurrentExerciseId = realView?.status === "ready" ? realView.currentExercise.id : null;
   const {
     state,
     currentExercise,
@@ -68,6 +74,14 @@ export default function SessionScreen() {
       cancelled = true;
     };
   }, [resolvedSessionId]);
+
+  useEffect(() => {
+    if (realCurrentExerciseId) {
+      setRealAnswer("");
+      setRealHintShown(false);
+      setErrorMessage(null);
+    }
+  }, [realCurrentExerciseId]);
 
   const answer = currentExercise ? state.answers[currentExercise.id] ?? "" : "";
   const hasStarted = useMemo(
@@ -138,6 +152,23 @@ export default function SessionScreen() {
     );
   }
 
+  if (realView?.status === "completed") {
+    return (
+      <AppScreen>
+        <ScreenHeader title="Session d'exercices" subtitle="Session terminée" showBack />
+        <AppCard className="gap-4">
+          <AppText variant="subtitle">Cette session est terminée</AppText>
+          <AppText tone="secondary">Ouvre le rapport pour consulter tes résultats réels.</AppText>
+          <AppButton
+            title="Voir mon rapport"
+            iconName="chart-bar"
+            onPress={() => router.replace({ pathname: "/session/[sessionId]/complete", params: { sessionId: resolvedSessionId } })}
+          />
+        </AppCard>
+      </AppScreen>
+    );
+  }
+
   if (realView?.status === "ready") {
     return (
       <AppScreen>
@@ -171,12 +202,30 @@ export default function SessionScreen() {
               <AppButton
                 title="Valider ma réponse"
                 iconName="check"
+                loading={isSubmittingRealAnswer}
                 onPress={() => {
                   if (!realAnswer.trim()) {
                     setErrorMessage("Écris ou choisis une réponse avant de demander la correction.");
                     return;
                   }
-                  router.push({ pathname: "/session/[sessionId]/correction", params: { sessionId: resolvedSessionId } });
+                  setIsSubmittingRealAnswer(true);
+                  submitRealSessionAnswer({
+                    sessionId: resolvedSessionId,
+                    exerciseId: realView.currentExercise.id,
+                    answer: realAnswer,
+                    usedHint: realHintShown,
+                  })
+                    .then(({ attempt }) => {
+                      setErrorMessage(null);
+                      router.push({
+                        pathname: "/session/[sessionId]/correction",
+                        params: { sessionId: resolvedSessionId, attemptId: attempt.id },
+                      });
+                    })
+                    .catch(() => {
+                      setErrorMessage("Impossible d'enregistrer ta réponse. Réessaie.");
+                    })
+                    .finally(() => setIsSubmittingRealAnswer(false));
                 }}
               />
             </View>
