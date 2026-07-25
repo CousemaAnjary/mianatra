@@ -38,16 +38,14 @@ async function createMany(inputs: CreateExerciseInput[]): Promise<Exercise[]> {
     return [];
   }
 
-  const now = nowIso();
-  return db
-    .insert(exercises)
-    .values(inputs.map((input) => ({ id: createId(), createdAt: now, ...input })))
-    .returning()
-    .all();
-}
-
-async function removeByCourse(courseId: string): Promise<void> {
-  db.delete(exercises).where(eq(exercises.courseId, courseId)).run();
+  return db.transaction((tx) => {
+    const now = nowIso();
+    return tx
+      .insert(exercises)
+      .values(inputs.map((input) => ({ id: createId(), createdAt: now, ...input })))
+      .returning()
+      .all();
+  });
 }
 
 export const exercisesRepository = {
@@ -55,5 +53,4 @@ export const exercisesRepository = {
   findAllByCourse,
   findAllByConcept,
   createMany,
-  removeByCourse,
 };
