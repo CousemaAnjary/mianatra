@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { AppButton, AppText } from "@/src/components/shared";
 import { db } from "@/src/db/client";
-import { initializeDatabaseConnection } from "@/src/db/initialization";
+import { initializeDatabaseConnection, prepareDatabaseForMigrations } from "@/src/db/initialization";
 import migrations from "@/src/db/migrations/migrations";
 
 type MigrationGateProps = {
@@ -25,11 +25,37 @@ type MigrationRunnerProps = MigrationGateProps & {
 };
 
 function MigrationRunner({ children, onRetry }: MigrationRunnerProps) {
+  const [isPrepared, setIsPrepared] = useState(false);
+
+  useEffect(() => {
+    prepareDatabaseForMigrations();
+    setIsPrepared(true);
+  }, []);
+
+  if (!isPrepared) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 bg-[#FFF7E8] p-6">
+        <AppText variant="subtitle" className="text-center">Préparation des données</AppText>
+        <AppText tone="secondary" className="text-center">Initialisation locale...</AppText>
+      </View>
+    );
+  }
+
+  return (
+    <PreparedMigrationRunner onRetry={onRetry}>
+      {children}
+    </PreparedMigrationRunner>
+  );
+}
+
+function PreparedMigrationRunner({ children, onRetry }: MigrationRunnerProps) {
   const { success, error } = useMigrations(db, migrations);
 
   useEffect(() => {
-    initializeDatabaseConnection();
-  }, []);
+    if (success || error) {
+      initializeDatabaseConnection();
+    }
+  }, [error, success]);
 
   if (error) {
     return (

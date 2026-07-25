@@ -1,3 +1,10 @@
+import { expoDb } from "./client";
+
+export function prepareDatabaseForMigrations() {
+  expoDb.execSync("PRAGMA foreign_keys = OFF");
+}
+
 export function initializeDatabaseConnection() {
-  // PRAGMA setup is centralized in client.ts when the singleton SQLite connection is opened.
+  expoDb.execSync("PRAGMA foreign_keys = ON");
+  expoDb.execSync("PRAGMA journal_mode = WAL");
 }

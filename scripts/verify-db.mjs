@@ -235,9 +235,82 @@ function insertBaseRows(db) {
   `);
 }
 
+function insertLegacyRows(db) {
+  db.exec(`
+    INSERT INTO user_profiles (id, first_name, display_name, grade, age, avatar_uri, created_at, updated_at)
+    VALUES ('profile-1', 'Fara', 'Fara', '2nde', 17, NULL, '2026-07-25T00:00:00.000Z', '2026-07-25T00:00:00.000Z');
+
+    INSERT INTO subjects (id, name, slug, color, icon_name, created_at, updated_at)
+    VALUES ('subject-1', 'Mathématiques', 'mathematiques', '#D94B24', 'calculator', '2026-07-25T00:00:00.000Z', '2026-07-25T00:00:00.000Z');
+
+    INSERT INTO courses (id, profile_id, subject_id, title, description, grade, status, cover_image_uri, source_uri, created_at, updated_at, archived_at)
+    VALUES ('course-1', 'profile-1', 'subject-1', 'Fonctions', 'Description', '2nde', 'ready', NULL, NULL, '2026-07-25T00:00:00.000Z', '2026-07-25T00:00:00.000Z', NULL);
+
+    INSERT INTO study_sessions (id, profile_id, course_id, type, status, started_at, completed_at, created_at, updated_at)
+    VALUES ('session-1', 'profile-1', 'course-1', 'initial', 'active', '2026-07-25T00:00:00.000Z', NULL, '2026-07-25T00:00:00.000Z', '2026-07-25T00:00:00.000Z');
+
+    INSERT INTO session_reports (id, session_id, score, correct_count, total_count, strengths_json, weaknesses_json, created_at, updated_at)
+    VALUES ('report-1', 'session-1', 1, 1, 1, '[]', '[]', '2026-07-25T00:00:00.000Z', '2026-07-25T00:00:00.000Z');
+  `);
+}
+
+function execExpoStyleMigration(db, relativePath) {
+  db.exec("PRAGMA foreign_keys = OFF");
+  db.exec("BEGIN");
+
+  try {
+    execMigration(db, relativePath);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  } finally {
+    db.exec("PRAGMA foreign_keys = ON");
+  }
+}
+
+function verifyExpoStyleCorrectiveMigration() {
+  const legacyDbPath = join(tempDir, "expo-style-migration.sqlite");
+  const legacyDb = new DatabaseSync(legacyDbPath);
+
+  try {
+    legacyDb.exec("PRAGMA foreign_keys = ON");
+    execMigration(legacyDb, "20260725114524_quick_golden_guardian/migration.sql");
+    execMigration(legacyDb, "20260725153531_tranquil_skreet/migration.sql");
+    insertLegacyRows(legacyDb);
+
+    execExpoStyleMigration(legacyDb, "20260725165016_local_singleton_schema/migration.sql");
+    execExpoStyleMigration(legacyDb, "20260725203000_concept_progress_score_100/migration.sql");
+
+    const finalTables = rows(
+      legacyDb,
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    ).map((row) => String(row.name));
+    assert(
+      JSON.stringify(finalTables) === JSON.stringify([...businessTables].sort()),
+      `Tables finales inattendues après migration Expo: ${finalTables.join(", ")}`,
+    );
+
+    const migratedSessions = Number(scalar(legacyDb, "SELECT COUNT(*) FROM study_sessions"));
+    const migratedReports = Number(scalar(legacyDb, "SELECT COUNT(*) FROM session_reports"));
+    assert(migratedSessions === 1, `Sessions migrées inattendues: ${migratedSessions}`);
+    assert(migratedReports === 1, `Rapports migrés inattendus: ${migratedReports}`);
+
+    const foreignKeyIssues = rows(legacyDb, "PRAGMA foreign_key_check");
+    assert(
+      foreignKeyIssues.length === 0,
+      `foreign_key_check Expo a retourné ${foreignKeyIssues.length} erreur(s)`,
+    );
+  } finally {
+    legacyDb.close();
+  }
+}
+
 const db = new DatabaseSync(dbPath);
 
 try {
+  verifyExpoStyleCorrectiveMigration();
+
   db.exec("PRAGMA foreign_keys = ON");
 
   for (const migrationFile of requiredMigrationFiles) {
