@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Image, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { OnboardingForm } from "@/src/components/core";
 import { AppScreen, AppText, ProgressBar } from "@/src/components/shared";
+import { Button, ButtonText } from "@/src/components/ui/button";
 import { demoGrades, demoProfile, type DemoGrade } from "@/src/data/demo-data";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -80,17 +81,21 @@ export default function OnboardingScreen() {
           <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
           <View style={styles.footerRow}>
             <AppText tone="secondary">1 sur 4</AppText>
-            <Pressable
+            <Button
+              action="primary"
+              variant="solid"
+              size="xl"
               accessibilityRole="button"
               accessibilityLabel="Suivant"
               onPress={validateAndContinue}
-              style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
+              className="rounded-full border"
+              style={styles.nextButton}
             >
-              <AppText variant="label" tone="inverse">
+              <ButtonText className="text-white font-bold">
                 Suivant
-              </AppText>
+              </ButtonText>
               <FontAwesome5 name="arrow-right" size={16} color={colors.white} />
-            </Pressable>
+            </Button>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -163,8 +168,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingHorizontal: spacing[6],
     paddingVertical: spacing[3],
-  },
-  nextButtonPressed: {
-    opacity: 0.82,
   },
 });
