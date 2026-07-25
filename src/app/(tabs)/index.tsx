@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { CourseCard, RecommendationCard } from "@/src/components/core";
@@ -31,6 +31,9 @@ export default function HomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Notifications"
+          onPress={() =>
+            Alert.alert("Notifications", "Aucune nouvelle notification pour cette démonstration.")
+          }
           style={styles.notificationButton}
         >
           <FontAwesome5 name="bell" size={22} color={colors.textPrimary} />
@@ -71,7 +74,11 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      <AppButton title="Ajouter un cours" onPress={() => router.push("/course/add")} />
+      <AppButton
+        title="Ajouter un cours"
+        iconName="plus"
+        onPress={() => router.push("/course/add")}
+      />
     </AppScreen>
   );
 }

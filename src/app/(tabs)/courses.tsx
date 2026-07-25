@@ -51,6 +51,7 @@ export default function CoursesScreen() {
 
       <AppButton
         title="Ajouter un cours"
+        iconName="plus"
         onPress={() => router.push("/course/add")}
       />
     </AppScreen>

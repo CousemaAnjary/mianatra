@@ -24,7 +24,11 @@ export default function CourseResultsScreen() {
           <AppText tone="secondary">
             {"Aucun résultat de démonstration n'est disponible pour ce cours."}
           </AppText>
-          <AppButton title="Retour aux cours" onPress={() => router.replace("/courses")} />
+          <AppButton
+            title="Retour aux cours"
+            iconName="arrow-left"
+            onPress={() => router.replace("/courses")}
+          />
         </AppCard>
       </AppScreen>
     );
@@ -60,6 +64,7 @@ export default function CourseResultsScreen() {
 
       <AppButton
         title="Reprendre avec des exercices"
+        iconName="pen"
         variant="secondary"
         onPress={() =>
           router.push({

@@ -57,7 +57,11 @@ export default function SessionCorrectionScreen() {
           <AppText tone="secondary">
             {state.message ?? "Aucun exercice ne peut être corrigé pour cette session."}
           </AppText>
-          <AppButton title="Retour à l'accueil" onPress={() => router.replace("/(tabs)")} />
+          <AppButton
+            title="Retour à l'accueil"
+            iconName="home"
+            onPress={() => router.replace("/(tabs)")}
+          />
         </AppCard>
       </AppScreen>
     );
@@ -74,6 +78,7 @@ export default function SessionCorrectionScreen() {
           </AppText>
           <AppButton
             title="Retour à l'exercice"
+            iconName="arrow-left"
             onPress={() =>
               router.replace({
                 pathname: "/session/[sessionId]",
@@ -94,10 +99,13 @@ export default function SessionCorrectionScreen() {
         <View style={styles.actions}>
           <AppButton
             title={isLastExercise ? "Voir mon rapport" : "Exercice suivant"}
+            iconName={isLastExercise ? "chart-bar" : "arrow-right"}
+            iconPosition="right"
             onPress={handleContinue}
           />
           <AppButton
             title="Revoir ma fiche"
+            iconName="file-alt"
             variant="secondary"
             onPress={() =>
               router.push({

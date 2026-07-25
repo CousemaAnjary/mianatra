@@ -24,7 +24,11 @@ export default function RevisionSheetScreen() {
           <AppText tone="secondary">
             {"Aucune fiche de démonstration n'est disponible pour ce cours."}
           </AppText>
-          <AppButton title="Retour aux cours" onPress={() => router.replace("/courses")} />
+          <AppButton
+            title="Retour aux cours"
+            iconName="arrow-left"
+            onPress={() => router.replace("/courses")}
+          />
         </AppCard>
       </AppScreen>
     );
@@ -50,6 +54,7 @@ export default function RevisionSheetScreen() {
 
       <AppButton
         title="Faire des exercices"
+        iconName="pen"
         onPress={() =>
           router.push({
             pathname: "/session/[sessionId]",

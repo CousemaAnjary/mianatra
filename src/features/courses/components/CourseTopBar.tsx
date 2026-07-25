@@ -26,8 +26,10 @@ export function CourseTopBar({ title, onOptionsPress }: CourseTopBarProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Options du cours"
+        accessibilityState={{ disabled: !onOptionsPress }}
+        disabled={!onOptionsPress}
         onPress={onOptionsPress}
-        style={styles.iconButton}
+        style={[styles.iconButton, !onOptionsPress && styles.iconButtonDisabled]}
       >
         <FontAwesome5 name="ellipsis-h" size={20} color={colors.textPrimary} />
       </Pressable>
@@ -47,6 +49,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.pill,
+  },
+  iconButtonDisabled: {
+    opacity: 0.35,
   },
   title: {
     flex: 1,

@@ -111,6 +111,7 @@ export default function AddCourseScreen() {
 
       <AppButton
         title="Compiler les pages"
+        iconName="check"
         disabled={pages.length === 0}
         accessibilityHint="Demande une confirmation puis ouvre le détail du cours"
         onPress={compilePages}

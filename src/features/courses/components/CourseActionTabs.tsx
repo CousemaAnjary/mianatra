@@ -17,13 +17,17 @@ type CourseActionTabsProps = {
 export function CourseActionTabs({ tabs }: CourseActionTabsProps) {
   return (
     <View style={styles.row}>
-      {tabs.map((tab) => (
+      {tabs.map((tab, index) => (
         <Pressable
           key={tab.id}
           accessibilityRole="button"
           accessibilityLabel={tab.label}
           onPress={tab.onPress}
-          style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.tab,
+            index === tabs.length - 1 && styles.lastTab,
+            pressed && styles.pressed,
+          ]}
         >
           <FontAwesome5 name={tab.iconName} size={22} color={colors.textPrimary} />
           <AppText variant="label" style={styles.tabLabel}>
@@ -59,5 +63,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     backgroundColor: colors.surfaceSoft,
+  },
+  lastTab: {
+    borderRightWidth: 0,
   },
 });

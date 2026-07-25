@@ -28,6 +28,7 @@ export function ScreenPlaceholder({
           {showBack ? (
             <AppButton
               title="Retour"
+              iconName="arrow-left"
               variant="secondary"
               onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
             />

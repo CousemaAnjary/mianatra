@@ -1,5 +1,6 @@
 import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import {
   AppButton,
   AppCard,
@@ -32,7 +33,11 @@ export default function CourseDetailScreen() {
           <AppText tone="secondary">
             {"Ce cours de démonstration n'existe pas ou n'est pas disponible."}
           </AppText>
-          <AppButton title="Retour à Mes cours" onPress={() => router.replace("/courses")} />
+          <AppButton
+            title="Retour à Mes cours"
+            iconName="arrow-left"
+            onPress={() => router.replace("/courses")}
+          />
         </AppCard>
       </AppScreen>
     );
@@ -113,6 +118,7 @@ export default function CourseDetailScreen() {
 
       <AppButton
         title="Réviser le cours"
+        iconName="file-alt"
         onPress={() =>
           router.push({
             pathname: "/course/[courseId]/revision-sheet",
@@ -132,6 +138,7 @@ export default function CourseDetailScreen() {
           }
           style={styles.secondaryButton}
         >
+          <FontAwesome5 name="pen" size={16} color={colors.textPrimary} />
           <AppText variant="label">Faire des exercices</AppText>
         </Pressable>
         <Pressable
@@ -145,6 +152,7 @@ export default function CourseDetailScreen() {
           }
           style={styles.secondaryButton}
         >
+          <FontAwesome5 name="chart-line" size={16} color={colors.textPrimary} />
           <AppText variant="label">Voir mes résultats</AppText>
         </Pressable>
       </View>
@@ -182,6 +190,8 @@ const styles = StyleSheet.create({
     minHeight: 58,
     flex: 1,
     alignItems: "center",
+    flexDirection: "row",
+    gap: spacing[2],
     justifyContent: "center",
     borderRadius: radius.large,
     borderWidth: 1,

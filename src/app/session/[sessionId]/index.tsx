@@ -92,7 +92,11 @@ export default function SessionScreen() {
           <AppText tone="secondary">
             {state.message ?? "Aucun exercice n'est disponible pour cette session."}
           </AppText>
-          <AppButton title="Retour à l'accueil" onPress={() => router.replace("/(tabs)")} />
+          <AppButton
+            title="Retour à l'accueil"
+            iconName="home"
+            onPress={() => router.replace("/(tabs)")}
+          />
         </AppCard>
       </AppScreen>
     );
@@ -125,14 +129,20 @@ export default function SessionScreen() {
           <View style={styles.actions}>
             <AppButton
               title={state.hintsUsed[currentExercise.id] ? "Indice affiché" : "Voir un indice"}
+              iconName="lightbulb"
               variant="tertiary"
               disabled={state.hintsUsed[currentExercise.id]}
               onPress={() => showHint(currentExercise.id)}
             />
-            <AppButton title="Valider ma réponse" onPress={handleSubmit} />
+            <AppButton title="Valider ma réponse" iconName="check" onPress={handleSubmit} />
           </View>
         </AppCard>
-        <AppButton title="Quitter la session" variant="secondary" onPress={handleExit} />
+        <AppButton
+          title="Quitter la session"
+          iconName="times"
+          variant="secondary"
+          onPress={handleExit}
+        />
       </View>
     </AppScreen>
   );

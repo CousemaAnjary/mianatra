@@ -80,7 +80,9 @@ export default function OnboardingScreen() {
           <View style={styles.footerRow}>
             <AppText tone="secondary">1 sur 4</AppText>
             <AppButton
-              title="Suivant  →"
+              title="Suivant"
+              iconName="arrow-right"
+              iconPosition="right"
               onPress={validateAndContinue}
               style={styles.nextButton}
             />

@@ -45,7 +45,7 @@ export default function SessionCompleteScreen() {
           <AppText tone="secondary">
             {state.message ?? "Cette session ne permet pas de générer un rapport."}
           </AppText>
-          <AppButton title="Retour à l'accueil" onPress={handleHome} />
+          <AppButton title="Retour à l'accueil" iconName="home" onPress={handleHome} />
         </AppCard>
       </AppScreen>
     );
@@ -62,6 +62,7 @@ export default function SessionCompleteScreen() {
           </AppText>
           <AppButton
             title="Reprendre la session"
+            iconName="arrow-left"
             onPress={() =>
               router.replace({
                 pathname: "/session/[sessionId]",
@@ -80,9 +81,10 @@ export default function SessionCompleteScreen() {
       <View style={styles.stack}>
         <SessionReport summary={summary} />
         <View style={styles.actions}>
-          <AppButton title="Faire une série ciblée" onPress={handleTargeted} />
+          <AppButton title="Faire une série ciblée" iconName="bullseye" onPress={handleTargeted} />
           <AppButton
             title="Voir mes résultats"
+            iconName="chart-line"
             variant="secondary"
             onPress={() =>
               router.push({
@@ -91,7 +93,12 @@ export default function SessionCompleteScreen() {
               })
             }
           />
-          <AppButton title="Retour à l'accueil" variant="secondary" onPress={handleHome} />
+          <AppButton
+            title="Retour à l'accueil"
+            iconName="home"
+            variant="secondary"
+            onPress={handleHome}
+          />
         </View>
       </View>
     </AppScreen>

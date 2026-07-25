@@ -33,7 +33,12 @@ export function RecommendationCard({ course, onContinue }: RecommendationCardPro
         />
       </View>
       <StatusBadge label="Lecture des graphiques" tone="progress" />
-      <AppButton title="Continuer ma révision" onPress={onContinue} />
+      <AppButton
+        title="Continuer ma révision"
+        iconName="arrow-right"
+        iconPosition="right"
+        onPress={onContinue}
+      />
     </AppCard>
   );
 }
