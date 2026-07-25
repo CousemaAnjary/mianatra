@@ -24,6 +24,7 @@ export type {
   CreateCourseWithPagesInput,
   CreateExerciseInput,
   CreatePageInput,
+  PersistCourseAnalysisRepositoryInput,
   CreateRecommendationInput,
   CreateRevisionSheetVersionInput,
   CreateSessionReportInput,

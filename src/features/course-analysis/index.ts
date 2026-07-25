@@ -8,6 +8,12 @@ export {
   createAnalyzeCoursePagesService,
 } from "./services/analyze-course-pages.service";
 export type { AnalyzeCoursePagesDependencies } from "./services/analyze-course-pages.service";
+export { createPersistCourseAnalysisService, persistCourseAnalysis } from "./services/persist-course-analysis.service";
+export type {
+  PersistCourseAnalysisConceptInput,
+  PersistCourseAnalysisInput,
+  PersistedCourseAnalysis,
+} from "./services/persist-course-analysis.service";
 export { buildCoursePageAnalysisPrompt } from "./prompts/course-page-analysis.prompt";
 export { detectAnalysisInconsistencies } from "./domain/detect-analysis-inconsistencies";
 export { mergeCoursePageAnalyses, normalizeAnalysisText } from "./domain/merge-course-page-analyses";
@@ -46,3 +52,13 @@ export {
   CoursePageAnalysisTimeoutError,
 } from "./errors/course-page-analysis.errors";
 export type { CoursePageAnalysisErrorCode } from "./errors/course-page-analysis.errors";
+export {
+  PersistCourseAnalysisConceptsReferencedError,
+  PersistCourseAnalysisCourseNotFoundError,
+  PersistCourseAnalysisError,
+  PersistCourseAnalysisFailedError,
+  PersistCourseAnalysisInvalidError,
+  PersistCourseAnalysisNoConceptsError,
+  PersistCourseAnalysisSubjectNotFoundError,
+} from "./errors/persist-course-analysis.errors";
+export type { PersistCourseAnalysisErrorCode } from "./errors/persist-course-analysis.errors";

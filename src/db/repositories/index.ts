@@ -14,6 +14,7 @@ export { studySessionsRepository } from "./study-sessions.repository";
 export { subjectsRepository } from "./subjects.repository";
 
 export type { CreateAnalysisInput } from "./analyses.repository";
+export type { PersistCourseAnalysisInput as PersistCourseAnalysisRepositoryInput } from "./analyses.repository";
 export type { CreateAttemptInput, SubmitAttemptWithProgressInput } from "./attempts.repository";
 export type { ReplaceConceptInput } from "./concepts.repository";
 export type { CreateCourseInput, CreateCourseWithPagesInput, CourseDetail, UpdateCourseInput } from "./courses.repository";
