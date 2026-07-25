@@ -35,6 +35,8 @@ yarn-error.*
 .env*.local
 mianatra.db
 *.db
+*.db-shm
+*.db-wal
 
 # typescript
 *.tsbuildinfo

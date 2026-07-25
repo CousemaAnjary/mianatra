@@ -43,6 +43,8 @@ npx expo start --clear --port 8099 --host localhost
 ```bash
 npm run lint
 npm run typecheck
+npm run db:generate
+npx expo export --platform web
 ```
 
 Aucun script `test` n'est configuré actuellement.
@@ -71,17 +73,40 @@ Parcours recommandé :
 
 Un script plus détaillé est disponible dans `docs/DEMO.md`.
 
-## 7. Limites actuelles
+## 7. Base de données locale
+
+La base native utilise SQLite via Expo SQLite et Drizzle. Le client unique est dans `src/db/client.ts` et ouvre `mianatra.db` avec `foreign_keys` et WAL activés.
+
+Le schéma métier est modulaire dans `src/db/schema/` et couvre les 14 tables principales : profils, matières, cours, pages, analyses, concepts, fiches de révision, exercices, sessions, tentatives, progression, rapports, recommandations et paramètres.
+
+Les migrations Drizzle sont dans `src/db/migrations/`. `src/db/migrations/migrations.js` est le bundle utilisé par Expo/React Native pour charger les fichiers `.sql`. Le web n'importe pas le client SQLite natif et continue d'utiliser les données de démonstration.
+
+Commandes utiles :
+
+```bash
+npm run db:generate
+npm run db:studio
+```
+
+`drizzle.config.ts` lit `DB_FILE_NAME` depuis `.env` pour Drizzle Studio ou la génération locale. Aucun seed n'est exécuté automatiquement.
+
+Drizzle Studio s'appuie sur le driver expérimental `node:sqlite`. Avec Node `v22.15.0`, Studio peut afficher `stmt.setReturnArrays is not a function`. Utiliser Node `>=22.16.0`, puis relancer :
+
+```bash
+npm run db:studio
+```
+
+## 8. Limites actuelles
 
 - Données fictives uniquement.
-- Pas de modèle métier SQLite exploité par les écrans de démonstration.
+- Modèle métier SQLite prêt côté fondation, mais les écrans de démonstration n'écrivent pas encore dedans.
 - Pas de caméra réelle.
 - Pas d'import PDF réel.
 - Pas d'Ollama ni de génération IA.
 - Pas de persistance de session.
 - Pas d'authentification distante.
 
-## 8. Problèmes connus
+## 9. Problèmes connus
 
 - L'environnement courant utilise Node `v22.15.0`, alors que `package.json` recommande `>=22.16.0`.
 - Les migrations SQLite sont chargées sur Android/iOS, mais contournées sur web pour permettre la démonstration avec les données fictives.

@@ -1,7 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from "react-native";
+import { ActivityIndicator, StyleSheet, type PressableProps } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { Button, ButtonText } from "@/src/components/ui/button";
 import { colors, radius, spacing } from "@/src/theme";
-import { AppText } from "./AppText";
 
 type AppButtonVariant = "primary" | "secondary" | "tertiary";
 type ButtonIconName = React.ComponentProps<typeof FontAwesome5>["name"];
@@ -33,8 +33,11 @@ export function AppButton({
   ) : null;
 
   return (
-    <Pressable
+    <Button
       {...props}
+      action={variant === "primary" ? "primary" : "secondary"}
+      variant={variant === "primary" || variant === "tertiary" ? "solid" : "outline"}
+      size="xl"
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
@@ -52,13 +55,13 @@ export function AppButton({
       ) : (
         <>
           {iconPosition === "left" ? icon : null}
-          <AppText variant="label" tone={textTone}>
+          <ButtonText style={[styles.text, { color: textTone === "inverse" ? colors.white : colors.textPrimary }]}>
             {title}
-          </AppText>
+          </ButtonText>
           {iconPosition === "right" ? icon : null}
         </>
       )}
-    </Pressable>
+    </Button>
   );
 }
 
@@ -76,19 +79,29 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    borderWidth: 1.5,
   },
   secondary: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   tertiary: {
     backgroundColor: colors.surfaceSoft,
+    borderColor: colors.border,
+    borderWidth: 1.5,
   },
   pressed: {
     opacity: 0.82,
   },
   disabled: {
     opacity: 0.5,
+  },
+  text: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0,
+    lineHeight: 20,
   },
 });

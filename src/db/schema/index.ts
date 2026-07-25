@@ -1,0 +1,15 @@
+export { appSettings } from "./app-settings.table";
+export { conceptProgress } from "./concept-progress.table";
+export { concepts } from "./concepts.table";
+export { courseAnalyses } from "./course-analyses.table";
+export { coursePages } from "./course-pages.table";
+export { courses } from "./courses.table";
+export { exerciseAttempts } from "./exercise-attempts.table";
+export { exercises } from "./exercises.table";
+export { recommendations } from "./recommendations.table";
+export { revisionSheets } from "./revision-sheets.table";
+export { sessionReports } from "./session-reports.table";
+export { studySessions } from "./study-sessions.table";
+export { subjects } from "./subjects.table";
+export { userProfiles } from "./user-profiles.table";
+export * from "./relations";

@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Image, ImageBackground, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { OnboardingForm } from "@/src/components/core";
-import { AppScreen, AppText, ProgressBar } from "@/src/components/shared";
-import { Button, ButtonText } from "@/src/components/ui/button";
+import { AppButton, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { demoGrades, demoProfile, type DemoGrade } from "@/src/data/demo-data";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -81,21 +79,13 @@ export default function OnboardingScreen() {
           <ProgressBar value={25} color={colors.primary} accessibilityLabel="Étape 1 sur 4" />
           <View style={styles.footerRow}>
             <AppText tone="secondary">1 sur 4</AppText>
-            <Button
-              action="primary"
-              variant="solid"
-              size="xl"
-              accessibilityRole="button"
-              accessibilityLabel="Suivant"
+            <AppButton
+              title="Suivant"
+              iconName="arrow-right"
+              iconPosition="right"
               onPress={validateAndContinue}
-              className="rounded-full border"
               style={styles.nextButton}
-            >
-              <ButtonText className="text-white font-bold">
-                Suivant
-              </ButtonText>
-              <FontAwesome5 name="arrow-right" size={16} color={colors.white} />
-            </Button>
+            />
           </View>
         </View>
       </KeyboardAvoidingView>

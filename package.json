@@ -10,7 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "db:studio": "drizzle-kit studio"
+    "predb:studio": "node ./scripts/check-node-sqlite-studio.js",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@expo/html-elements": "^0.10.1",
