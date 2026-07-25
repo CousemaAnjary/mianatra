@@ -1,50 +1,88 @@
-# Welcome to your Expo app 👋
+# Mianatra
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 1. Présentation
 
-## Get started
+Mianatra est une application éducative de démonstration pour lycéens malagasy. Cette coquille MVP présente un parcours complet basé sur des données fictives : onboarding, accueil, cours, fiche de révision, exercices, correction, rapport et profil.
 
-1. Install dependencies
+## 2. Prérequis
 
-   ```bash
-   npm install
-   ```
+- Node.js testé dans ce dépôt : `v22.15.0`.
+- Version recommandée par `package.json` : `>=22.16.0`.
+- npm `11.5.2`.
+- Expo CLI local via `npx expo`.
+- Expo Go ou un émulateur Android pour une démonstration mobile native.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 3. Installation
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Créer un fichier `.env` local si nécessaire :
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## 4. Lancement
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Commande standard :
 
-## Join the community
+```bash
+npm run start
+```
 
-Join our community of developers creating universal apps.
+Commande validée pour la démonstration web locale :
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start --clear --port 8099 --host localhost
+```
+
+## 5. Vérifications
+
+```bash
+npm run lint
+npm run typecheck
+```
+
+Aucun script `test` n'est configuré actuellement.
+
+## 6. Parcours de démonstration
+
+Compte de démonstration : Fara, 17 ans, classe de 2nde.
+
+Parcours recommandé :
+
+1. Ouvrir l'onboarding.
+2. Valider Fara, 17 ans, 2nde.
+3. Arriver sur l'accueil.
+4. Ouvrir Mes cours.
+5. Ajouter un cours.
+6. Afficher les quatre pages de démonstration.
+7. Réorganiser ou supprimer/restaurer une page.
+8. Compiler les pages.
+9. Ouvrir le détail du cours Fonctions du second degré.
+10. Ouvrir la fiche de révision.
+11. Lancer les exercices.
+12. Répondre à une question, consulter la correction, puis terminer la série.
+13. Afficher le rapport.
+14. Lancer une série ciblée ou ouvrir les résultats.
+15. Terminer sur le profil.
+
+Un script plus détaillé est disponible dans `docs/DEMO.md`.
+
+## 7. Limites actuelles
+
+- Données fictives uniquement.
+- Pas de modèle métier SQLite exploité par les écrans de démonstration.
+- Pas de caméra réelle.
+- Pas d'import PDF réel.
+- Pas d'Ollama ni de génération IA.
+- Pas de persistance de session.
+- Pas d'authentification distante.
+
+## 8. Problèmes connus
+
+- L'environnement courant utilise Node `v22.15.0`, alors que `package.json` recommande `>=22.16.0`.
+- Les migrations SQLite sont chargées sur Android/iOS, mais contournées sur web pour permettre la démonstration avec les données fictives.
+- Aucun test automatique n'est configuré ; les contrôles obligatoires sont `lint`, `typecheck` et l'export web.
