@@ -21,11 +21,11 @@ export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelector
             accessibilityState={{ selected: isSelected }}
             onPress={() => onSelect(grade)}
             className={[
-              "min-h-[52px] flex-1 items-center justify-center rounded-2xl border",
+              "min-h-[48px] flex-1 items-center justify-center rounded-xl border",
               isSelected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FFFDF8]",
             ].join(" ")}
           >
-            <AppText variant="label" tone={isSelected ? "inverse" : "primary"}>
+            <AppText variant="label" tone={isSelected ? "inverse" : "primary"} className="text-[15px]">
               {grade}
             </AppText>
           </Pressable>

@@ -27,6 +27,7 @@ type OnboardingFormProps = {
   onSelectGrade: (grade: string) => void;
   onChangeSeries: (value: string) => void;
   onChangeSchoolName: (value: string) => void;
+  showOptionalDetails?: boolean;
 };
 
 export function OnboardingForm({
@@ -44,12 +45,13 @@ export function OnboardingForm({
   onSelectGrade,
   onChangeSeries,
   onChangeSchoolName,
+  showOptionalDetails = true,
 }: OnboardingFormProps) {
   return (
     <View className="gap-3">
       <FormControl isInvalid={Boolean(nameError)} className="gap-2">
         <FormControlLabel>
-          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
+          <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
             {"Comment veux-tu qu'on t'appelle ?"}
           </FormControlLabelText>
         </FormControlLabel>
@@ -57,12 +59,12 @@ export function OnboardingForm({
           size="xl"
           variant="outline"
           className={[
-            "h-[52px] rounded-2xl border bg-[#FFFDF8] px-4",
+            "h-[48px] rounded-xl border bg-[#FFFDF8] px-4",
             nameError ? "border-[#B53434]" : "border-[#E8D9C7]",
           ].join(" ")}
         >
           <InputSlot className="pr-2">
-            <FontAwesome5 name="user" size={20} color={colors.textSecondary} />
+            <FontAwesome5 name="user" size={16} color={colors.textSecondary} />
           </InputSlot>
           <InputField
             accessibilityLabel="Prénom ou pseudonyme"
@@ -70,7 +72,7 @@ export function OnboardingForm({
             onChangeText={onChangeDisplayName}
             placeholder="Ton prénom"
             placeholderTextColor={colors.textMuted}
-            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
+            className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
             returnKeyType="next"
           />
         </Input>
@@ -85,7 +87,7 @@ export function OnboardingForm({
 
       <FormControl isInvalid={Boolean(ageError)} className="gap-2">
         <FormControlLabel>
-          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
+          <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
             Quel âge as-tu ?
           </FormControlLabelText>
         </FormControlLabel>
@@ -93,12 +95,12 @@ export function OnboardingForm({
           size="xl"
           variant="outline"
           className={[
-            "h-[52px] rounded-2xl border bg-[#FFFDF8] px-4",
+            "h-[48px] rounded-xl border bg-[#FFFDF8] px-4",
             ageError ? "border-[#B53434]" : "border-[#E8D9C7]",
           ].join(" ")}
         >
           <InputSlot className="pr-2">
-            <FontAwesome5 name="birthday-cake" size={20} color={colors.textSecondary} />
+            <FontAwesome5 name="birthday-cake" size={16} color={colors.textSecondary} />
           </InputSlot>
           <InputField
             accessibilityLabel="Âge"
@@ -107,7 +109,7 @@ export function OnboardingForm({
             placeholder="17"
             placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
-            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
+            className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
           />
           <InputSlot className="pl-2">
             <AppText tone="secondary">ans</AppText>
@@ -123,7 +125,7 @@ export function OnboardingForm({
       </FormControl>
 
       <FormControl isInvalid={Boolean(gradeError)} className="gap-2">
-        <AppText variant="label">Quelle est ta classe ?</AppText>
+        <AppText variant="label" className="text-[14px] leading-5">Quelle est ta classe ?</AppText>
         <ClassSelector
           grades={grades}
           selectedGrade={selectedGrade}
@@ -138,47 +140,51 @@ export function OnboardingForm({
         ) : null}
       </FormControl>
 
-      <FormControl className="gap-2">
-        <FormControlLabel>
-          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
-            Série
-          </FormControlLabelText>
-        </FormControlLabel>
-        <Input size="xl" variant="outline" className="h-[52px] rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
-          <InputSlot className="pr-2">
-            <FontAwesome5 name="stream" size={18} color={colors.textSecondary} />
-          </InputSlot>
-          <InputField
-            accessibilityLabel="Série"
-            value={series}
-            onChangeText={onChangeSeries}
-            placeholder="Scientifique, littéraire..."
-            placeholderTextColor={colors.textMuted}
-            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
-          />
-        </Input>
-      </FormControl>
+      {showOptionalDetails ? (
+        <>
+          <FormControl className="gap-2">
+            <FormControlLabel>
+              <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+                Série
+              </FormControlLabelText>
+            </FormControlLabel>
+            <Input size="xl" variant="outline" className="h-[48px] rounded-xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
+              <InputSlot className="pr-2">
+                <FontAwesome5 name="stream" size={16} color={colors.textSecondary} />
+              </InputSlot>
+              <InputField
+                accessibilityLabel="Série"
+                value={series}
+                onChangeText={onChangeSeries}
+                placeholder="Scientifique, littéraire..."
+                placeholderTextColor={colors.textMuted}
+                className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+              />
+            </Input>
+          </FormControl>
 
-      <FormControl className="gap-2">
-        <FormControlLabel>
-          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
-            Établissement
-          </FormControlLabelText>
-        </FormControlLabel>
-        <Input size="xl" variant="outline" className="h-[52px] rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
-          <InputSlot className="pr-2">
-            <FontAwesome5 name="school" size={18} color={colors.textSecondary} />
-          </InputSlot>
-          <InputField
-            accessibilityLabel="Établissement"
-            value={schoolName}
-            onChangeText={onChangeSchoolName}
-            placeholder="Facultatif"
-            placeholderTextColor={colors.textMuted}
-            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
-          />
-        </Input>
-      </FormControl>
+          <FormControl className="gap-2">
+            <FormControlLabel>
+              <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+                Établissement
+              </FormControlLabelText>
+            </FormControlLabel>
+            <Input size="xl" variant="outline" className="h-[48px] rounded-xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
+              <InputSlot className="pr-2">
+                <FontAwesome5 name="school" size={16} color={colors.textSecondary} />
+              </InputSlot>
+              <InputField
+                accessibilityLabel="Établissement"
+                value={schoolName}
+                onChangeText={onChangeSchoolName}
+                placeholder="Facultatif"
+                placeholderTextColor={colors.textMuted}
+                className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+              />
+            </Input>
+          </FormControl>
+        </>
+      ) : null}
     </View>
   );
 }

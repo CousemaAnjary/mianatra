@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingForm } from "@/src/components/core";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import {
@@ -12,6 +13,7 @@ import {
 import { colors } from "@/src/theme";
 
 export default function OnboardingScreen() {
+  const insets = useSafeAreaInsets();
   const isSubmittingRef = useRef(false);
   const [displayName, setDisplayName] = useState("");
   const [age, setAge] = useState("");
@@ -93,15 +95,16 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <AppScreen scroll={false} contentClassName="flex-1 pb-0 pt-1">
+    <AppScreen scroll={false} contentClassName="flex-1 px-6 pb-0 pt-0">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         className="flex-1"
       >
         <ScrollView
           automaticallyAdjustKeyboardInsets
-          contentContainerClassName="grow justify-between gap-4 pb-6"
+          contentContainerClassName="grow justify-between gap-4 pt-3"
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 18, 30) }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -110,17 +113,14 @@ export default function OnboardingScreen() {
               source={require("../../../assets/mianatra/pattern_lamba_horizontal.png")}
               resizeMode="cover"
               imageStyle={{ opacity: 1 }}
-              className="h-[34px] overflow-hidden rounded-xl bg-[#FFFDF8]"
+              className="h-[34px] overflow-hidden rounded-md bg-[#FFFDF8]"
             />
 
-            <View className="items-center gap-1.5 pt-2">
-              <AppText variant="title" className="text-[42px] leading-[48px] text-[#D94B24]">
+            <View className="items-center gap-1 pt-3">
+              <AppText variant="title" className="text-center text-[44px] leading-[49px] text-[#D94B24]">
                 Mianatra
               </AppText>
-              <AppText variant="subtitle" className="text-[24px] leading-7">
-                Tout cours
-              </AppText>
-              <AppText tone="secondary" className="max-w-[300px] text-center text-[17px] leading-6">
+              <AppText tone="secondary" className="max-w-[286px] pt-4 text-center text-[15px] leading-[22px]">
                 {"Faisons connaissance pour mieux t'accompagner."}
               </AppText>
             </View>
@@ -130,7 +130,7 @@ export default function OnboardingScreen() {
               accessibilityLabel="Deux lycéens en train d'étudier"
               accessibilityIgnoresInvertColors
               resizeMode="contain"
-              className="h-[178px] w-[90%] self-center"
+              className="h-[162px] w-full self-center"
             />
 
             <OnboardingForm
@@ -148,31 +148,32 @@ export default function OnboardingScreen() {
               onSelectGrade={setSelectedGrade}
               onChangeSeries={setSeries}
               onChangeSchoolName={setSchoolName}
+              showOptionalDetails={false}
             />
           </View>
 
-          <View className="gap-3 pt-1">
+          <View className="gap-3 pt-2">
             {errors.form ? (
               <AppText accessibilityRole="alert" tone="error">
                 {errors.form}
               </AppText>
             ) : null}
-          <AppButton
-            title={isSubmitting ? "Création du profil..." : "Créer mon profil"}
-            iconName="arrow-right"
-            iconPosition="right"
-            loading={isSubmitting}
-            disabled={isSubmitting}
-            onPress={validateAndContinue}
-            className="w-full"
-            style={{
-              shadowColor: colors.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
-          />
+            <AppButton
+              title={isSubmitting ? "Création..." : "Suivant"}
+              iconName="arrow-right"
+              iconPosition="right"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              onPress={validateAndContinue}
+              className="w-full"
+              style={{
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 5,
+              }}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
