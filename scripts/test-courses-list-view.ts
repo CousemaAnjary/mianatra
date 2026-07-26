@@ -106,6 +106,7 @@ async function main() {
   assert.equal(items[0].masteredCount, 1, "compteur maîtrisé réel");
   assert.equal(items[0].progressingCount, 1, "compteur en progression réel");
   assert.equal(items[0].needsWorkCount, 1, "compteur à renforcer réel");
+  assert.equal(items[0].lastReviewedAt, null, "dernière révision conservée");
   assert.equal(items[0].progress, 57, "progression réelle moyenne arrondie");
   assert.equal(items[1].subject, "Matière inconnue", "fallback matière absent");
   assert.equal(items[1].iconName, "book-open", "fallback icône matière absent");

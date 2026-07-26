@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { AddPageButton, CoursePageGrid, ImportStepHeader } from "@/src/features/course-import/components";
 import type { Subject } from "@/src/db";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import { Input, InputField } from "@/src/components/ui/input";
 import { compileCourse, getCourseImportDefaults, getOrCreateCourseImportSubject } from "@/src/features/course-import/services/course-import.service";
+import {
+  normalizeCourseImportSubjectName,
+  resolveCourseImportSubjectForCreation,
+  resolveInitialCourseImportSubject,
+  shouldReuseCompiledCourse,
+} from "@/src/features/course-import";
 import { expoGalleryImportService } from "@/src/features/course-import/services/gallery-import.expo";
 import {
   MAX_GALLERY_COURSE_PAGES,
@@ -19,22 +25,24 @@ import { listSubjects } from "@/src/features/subjects";
 
 type AddCourseStep = 1 | 2 | 3;
 
-function normalizeText(value: string) {
-  return value.trim().replace(/\s+/g, " ");
-}
-
 export default function AddCourseScreen() {
+  const { subjectId } = useLocalSearchParams<{ subjectId?: string }>();
+  const requestedSubjectId = Array.isArray(subjectId) ? subjectId[0] : subjectId;
   const [step, setStep] = useState<AddCourseStep>(1);
   const [pages, setPages] = useState<SelectedCoursePage[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [title, setTitle] = useState("Nouveau cours");
   const [grade, setGrade] = useState("2nde");
   const [subjectName, setSubjectName] = useState("SVT");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [isPicking, setIsPicking] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [compiledCourseId, setCompiledCourseId] = useState<string | null>(null);
+  const [compiledSubjectId, setCompiledSubjectId] = useState<string | null>(null);
   const [isSavingCourse, setIsSavingCourse] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isCompileInFlightRef = useRef(false);
+  const isSaveInFlightRef = useRef(false);
   const processing = useCourseProcessing(compiledCourseId ?? undefined);
 
   useEffect(() => {
@@ -45,7 +53,13 @@ export default function AddCourseScreen() {
           return;
         }
         setSubjects(availableSubjects);
-        setSubjectName(defaults.subjectName);
+        const initialSubject = resolveInitialCourseImportSubject({
+          requestedSubjectId,
+          subjects: availableSubjects,
+          defaultSubjectName: defaults.subjectName,
+        });
+        setSubjectName(initialSubject.subjectName);
+        setSelectedSubjectId(initialSubject.selectedSubjectId);
         setTitle(defaults.title);
         setGrade(defaults.grade);
       })
@@ -58,7 +72,7 @@ export default function AddCourseScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [requestedSubjectId]);
 
   function removePage(id: string) {
     setPages((currentPages) => removeSelectedCoursePage(currentPages, id));
@@ -69,7 +83,7 @@ export default function AddCourseScreen() {
   }
 
   function goToPagesStep() {
-    if (!normalizeText(subjectName)) {
+    if (!normalizeCourseImportSubjectName(subjectName)) {
       const message = "Choisis ou crée une matière avant de continuer.";
       setErrorMessage(message);
       Alert.alert("Matière requise", message);
@@ -109,6 +123,13 @@ export default function AddCourseScreen() {
   }
 
   async function compileSelectedPages() {
+    if (isCompileInFlightRef.current) {
+      return;
+    }
+    if (shouldReuseCompiledCourse(compiledCourseId)) {
+      setStep(3);
+      return;
+    }
     if (!subjectName.trim()) {
       const message = "Renseigne la matière du cours.";
       setErrorMessage(message);
@@ -123,17 +144,28 @@ export default function AddCourseScreen() {
     }
 
     setErrorMessage(null);
+    isCompileInFlightRef.current = true;
     setIsCompiling(true);
     try {
-      const subject = await getOrCreateCourseImportSubject(subjectName);
+      const subject = await resolveCourseImportSubjectForCreation({
+        subjectName,
+        selectedSubjectId,
+        subjects,
+        getOrCreateSubject: getOrCreateCourseImportSubject,
+      });
       const result = await expoGalleryImportService.createCourse({
         subjectId: subject.id,
         title,
         grade,
         pages,
       });
+      if (!result.course.id) {
+        throw new GalleryImportError("course_creation_failed", "Le cours a été créé sans identifiant exploitable.");
+      }
       await compileCourse(result.course.id);
       setCompiledCourseId(result.course.id);
+      setCompiledSubjectId(subject.id);
+      setSelectedSubjectId(subject.id);
       setSubjectName(subject.name);
       setStep(3);
     } catch (error) {
@@ -141,28 +173,34 @@ export default function AddCourseScreen() {
       setErrorMessage(message);
       Alert.alert("Compilation impossible", message);
     } finally {
+      isCompileInFlightRef.current = false;
       setIsCompiling(false);
     }
   }
 
   async function saveAnalyzedCourse() {
+    if (isSaveInFlightRef.current || !processing.pendingAnalysis) {
+      return;
+    }
+    isSaveInFlightRef.current = true;
     setIsSavingCourse(true);
     try {
       await processing.confirmAndContinue?.();
       if (compiledCourseId) {
         router.replace({
           pathname: "/course/[courseId]",
-          params: { courseId: compiledCourseId },
+          params: { courseId: compiledCourseId, subjectId: compiledSubjectId ?? selectedSubjectId ?? undefined },
         });
       }
     } catch {
       // Le contrôleur expose déjà le message utilisateur dans processing.error.
     } finally {
+      isSaveInFlightRef.current = false;
       setIsSavingCourse(false);
     }
   }
 
-  const normalizedSubjectName = normalizeText(subjectName);
+  const normalizedSubjectName = normalizeCourseImportSubjectName(subjectName);
   const isProcessingBusy = ["analyzing", "persisting", "generating_sheet", "generating_exercises"].includes(processing.status);
   const detectedAnalysis = processing.pendingAnalysis ?? processing.result.analysis;
 
@@ -183,13 +221,16 @@ export default function AddCourseScreen() {
           {subjects.length > 0 ? (
             <View className="flex-row flex-wrap gap-2">
               {subjects.map((subject) => {
-                const isSelected = normalizeText(subjectName).toLocaleLowerCase() === subject.name.toLocaleLowerCase();
+                const isSelected = selectedSubjectId === subject.id;
                 return (
                   <Pressable
                     key={subject.id}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
-                    onPress={() => setSubjectName(subject.name)}
+                    onPress={() => {
+                      setSubjectName(subject.name);
+                      setSelectedSubjectId(subject.id);
+                    }}
                     className={[
                       "min-h-11 rounded-full border px-4 py-3 active:opacity-80",
                       isSelected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FFFDF8]",
@@ -210,7 +251,10 @@ export default function AddCourseScreen() {
               <Input variant="rounded" size="xl" className="border-[#E8D9C7] bg-[#FFFDF8]">
                 <InputField
                   value={subjectName}
-                  onChangeText={setSubjectName}
+                  onChangeText={(nextSubjectName) => {
+                    setSubjectName(nextSubjectName);
+                    setSelectedSubjectId(null);
+                  }}
                   placeholder="SVT"
                   className="text-[#2F241F]"
                   returnKeyType="done"
@@ -286,7 +330,7 @@ export default function AddCourseScreen() {
             </AppCard>
           )}
 
-          <AddPageButton onPress={chooseImages} disabled={isPicking || isCompiling} />
+          <AddPageButton onPress={chooseImages} disabled={isPicking || isCompiling || Boolean(compiledCourseId)} />
           <View className="flex-row gap-3">
             <AppButton title="Retour" iconName="arrow-left" variant="secondary" className="flex-1" onPress={() => setStep(1)} />
             <AppButton
@@ -294,7 +338,7 @@ export default function AddCourseScreen() {
               iconName="layer-group"
               className="flex-[2]"
               loading={isCompiling}
-              disabled={pages.length === 0 || !normalizedSubjectName || isPicking}
+              disabled={pages.length === 0 || !normalizedSubjectName || isPicking || isCompiling}
               accessibilityHint="Compile les pages sélectionnées avant l'analyse"
               onPress={compileSelectedPages}
             />

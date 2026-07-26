@@ -14,6 +14,14 @@ export {
 } from "./services/course-import.service";
 export type { CourseFromPagesInput, ImportPageInput } from "./services/course-import.service";
 export {
+  findCourseImportSubjectByNormalizedName,
+  normalizeCourseImportSubjectName,
+  resolveCourseImportSubjectForCreation,
+  resolveInitialCourseImportSubject,
+  shouldReuseCompiledCourse,
+} from "./services/course-import-flow.service";
+export type { CourseImportSubjectSelection } from "./services/course-import-flow.service";
+export {
   GalleryImportError,
   MAX_GALLERY_COURSE_PAGES,
   createGalleryImportService,

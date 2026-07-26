@@ -31,6 +31,10 @@ function uniqueSortedGrades(courses: readonly Course[]) {
   return Array.from(new Set(courses.map((course) => course.grade.trim()).filter(Boolean))).sort((left, right) => left.localeCompare(right));
 }
 
+function clampProgress(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 function mainWeakness(details: readonly CourseDetail[]) {
   const weaknesses = details
     .flatMap((detail) =>
@@ -72,9 +76,10 @@ function buildSubjectOverview(subject: Subject, courses: readonly Course[], deta
   const masteredCount = courseResults.reduce((sum, result) => sum + result.counters.mastered, 0);
   const progressingCount = courseResults.reduce((sum, result) => sum + result.counters.progressing, 0);
   const needsWorkCount = courseResults.reduce((sum, result) => sum + result.counters.needsWork, 0);
+  // La progression matière est la moyenne simple des progressions de ses chapitres actifs.
   const progress =
     courseResults.length > 0
-      ? Math.round(courseResults.reduce((sum, result) => sum + result.progress, 0) / courseResults.length)
+      ? clampProgress(Math.round(courseResults.reduce((sum, result) => sum + result.progress, 0) / courseResults.length))
       : 0;
 
   return {

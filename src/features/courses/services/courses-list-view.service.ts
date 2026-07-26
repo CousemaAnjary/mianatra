@@ -40,6 +40,7 @@ function toCourseListItem(detail: CourseDetail): CourseListItem | null {
     progressingCount: results.counters.progressing,
     needsWorkCount: results.counters.needsWork,
     status: detail.course.status,
+    lastReviewedAt: detail.course.lastReviewedAt,
     updatedAt: detail.course.updatedAt,
   };
 }

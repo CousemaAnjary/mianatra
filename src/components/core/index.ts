@@ -4,3 +4,4 @@ export { GradeFilter, type GradeFilterValue } from "./GradeFilter";
 export { OnboardingForm } from "./OnboardingForm";
 export { ProfileMenuRow } from "./ProfileMenuRow";
 export { RecommendationCard } from "./RecommendationCard";
+export { SubjectCard, type SubjectCardData } from "./SubjectCard";

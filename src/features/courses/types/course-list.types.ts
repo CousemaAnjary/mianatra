@@ -11,5 +11,6 @@ export type CourseListItem = {
   progressingCount: number;
   needsWorkCount: number;
   status: "draft" | "processing" | "ready";
+  lastReviewedAt: string | null;
   updatedAt: string;
 };
