@@ -17,7 +17,7 @@ export function CoursePageGrid({
   return (
     <View className="flex-row flex-wrap gap-3">
       {pages.map((page, index) => (
-        <View key={page.id} className="w-[48%]">
+        <View key={page.id} className="w-[46%]">
           <CoursePageItem
             page={page}
             index={index}

@@ -1,4 +1,4 @@
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type AppScreenProps = {
@@ -7,6 +7,7 @@ type AppScreenProps = {
   padded?: boolean;
   className?: string;
   contentClassName?: string;
+  contentStyle?: StyleProp<ViewStyle>;
 };
 
 export function AppScreen({
@@ -15,10 +16,11 @@ export function AppScreen({
   padded = true,
   className,
   contentClassName,
+  contentStyle,
 }: AppScreenProps) {
   const paddedClassName = padded ? (scroll ? "p-5" : "flex-1 p-5") : "";
   const content = (
-    <View className={[paddedClassName, contentClassName].filter(Boolean).join(" ")}>
+    <View className={[paddedClassName, contentClassName].filter(Boolean).join(" ")} style={contentStyle}>
       {children}
     </View>
   );

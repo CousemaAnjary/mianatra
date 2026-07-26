@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Pressable, Switch, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Input, InputField, InputSlot } from "@/src/components/ui/input";
-import { AppButton, AppCard, AppText } from "@/src/components/shared";
+import { AppButton, AppText } from "@/src/components/shared";
 import { ALLOWED_GEMMA_MODELS, type GemmaModel } from "@/src/services/ai";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 import {
   getAIConfiguration,
   removeGeminiApiKey,
@@ -32,6 +32,13 @@ function statusLabel(config: AIConfiguration | null) {
     return "Aucune clé configurée";
   }
   return `Clé enregistrée ${config.geminiApiKeyPreview ?? ""}`.trim();
+}
+
+function statusTone(config: AIConfiguration | null) {
+  if (!config?.geminiApiKeyConfigured) {
+    return { backgroundColor: "#FAF1E2", color: colors.textSecondary };
+  }
+  return { backgroundColor: "#EAF0E3", color: colors.secondary };
 }
 
 export function AISettingsCard() {
@@ -120,18 +127,29 @@ export function AISettingsCard() {
   }
 
   return (
-    <AppCard className="gap-5">
-      <View className="gap-1">
-        <AppText variant="subtitle">Intelligence artificielle</AppText>
-        <AppText variant="caption" tone="secondary">
-          {statusLabel(config)}
-        </AppText>
+    <View className="gap-4">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="min-w-0 flex-1 gap-1">
+          <AppText className="text-[17px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+            Intelligence artificielle
+          </AppText>
+          <AppText className="text-[12px] leading-4" tone="secondary">
+            Génération avec Gemini
+          </AppText>
+        </View>
+        <View className="rounded-full px-3 py-1" style={{ backgroundColor: statusTone(config).backgroundColor }}>
+          <AppText numberOfLines={1} className="max-w-[150px] text-[11px] leading-4" style={{ color: statusTone(config).color, fontFamily: fonts.bold }}>
+            {statusLabel(config)}
+          </AppText>
+        </View>
       </View>
 
-      <View className="flex-row items-center justify-between gap-4">
+      <View className="flex-row items-center justify-between gap-4 rounded-2xl bg-[#FAF1E2] px-3.5 py-2.5">
         <View className="flex-1">
-          <AppText variant="label">{"Activer l'IA"}</AppText>
-          <AppText variant="caption" tone="secondary">
+          <AppText className="text-[14px] leading-5 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+            {"Activer l'IA"}
+          </AppText>
+          <AppText className="text-[12px] leading-4" tone="secondary">
             {enabled ? "Active pour les prochains tests" : "Désactivée"}
           </AppText>
         </View>
@@ -145,8 +163,10 @@ export function AISettingsCard() {
       </View>
 
       <View className="gap-2">
-        <AppText variant="label">Clé API Gemini</AppText>
-        <Input variant="rounded" size="xl" className="border-[#E8D9C7] bg-[#FFFDF8]">
+        <AppText className="text-[14px] leading-5 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+          Clé API Gemini
+        </AppText>
+        <Input variant="rounded" size="xl" className="min-h-[48px] border-[#E8D9C7] bg-[#FFFDF8]">
           <InputField
             value={apiKeyDraft}
             onChangeText={setApiKeyDraft}
@@ -154,7 +174,8 @@ export function AISettingsCard() {
             secureTextEntry={!showKey}
             autoCapitalize="none"
             autoCorrect={false}
-            className="text-base text-[#2F241F]"
+            className="text-[14px] text-[#2F241F]"
+            style={{ fontFamily: fonts.medium }}
             accessibilityLabel="Clé API Gemini"
           />
           <InputSlot className="px-4" onPress={() => setShowKey((value) => !value)}>
@@ -164,8 +185,10 @@ export function AISettingsCard() {
       </View>
 
       <View className="gap-2">
-        <AppText variant="label">Modèle</AppText>
-        <View className="flex-row gap-2">
+        <AppText className="text-[14px] leading-5 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+          Modèle
+        </AppText>
+        <View className="flex-row rounded-full border border-[#E8D9C7] bg-[#FAF1E2] p-1">
           {ALLOWED_GEMMA_MODELS.map((model) => {
             const selected = selectedModel === model;
             return (
@@ -175,11 +198,11 @@ export function AISettingsCard() {
                 accessibilityState={{ selected }}
                 onPress={() => setSelectedModel(model)}
                 className={[
-                  "min-h-[48px] flex-1 items-center justify-center rounded-full border px-3",
-                  selected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FFF7E8]",
+                  "min-h-[42px] flex-1 items-center justify-center rounded-full px-3",
+                  selected ? "bg-[#D94B24]" : "bg-transparent",
                 ].join(" ")}
               >
-                <AppText variant="label" tone={selected ? "inverse" : "primary"} className="text-center">
+                <AppText tone={selected ? "inverse" : "primary"} numberOfLines={2} className="text-center text-[12px] leading-4" style={{ fontFamily: fonts.bold }}>
                   {modelLabel(model)}
                 </AppText>
               </Pressable>
@@ -189,16 +212,18 @@ export function AISettingsCard() {
       </View>
 
       {testState ? (
-        <AppText variant="caption" tone={testState.tone}>
+        <AppText className="text-[12px] leading-4" tone={testState.tone}>
           {testState.message}
         </AppText>
       ) : null}
 
-      <View className="gap-3">
-        <AppButton title="Enregistrer" iconName="save" onPress={handleSave} loading={saving} />
-        <AppButton title="Tester la connexion" iconName="bolt" variant="secondary" onPress={handleTest} loading={testing} />
-        <AppButton title="Supprimer la clé" iconName="trash-alt" variant="tertiary" onPress={confirmDeleteKey} disabled={!config?.geminiApiKeyConfigured && apiKeyDraft.length === 0} />
+      <View className="gap-2.5">
+        <AppButton title="Enregistrer" iconName="save" className="min-h-[50px]" onPress={handleSave} loading={saving} />
+        <View className="flex-row gap-2.5">
+          <AppButton title="Tester" iconName="bolt" variant="secondary" className="min-h-[46px] flex-1 px-4" onPress={handleTest} loading={testing} />
+          <AppButton title="Supprimer" iconName="trash-alt" variant="tertiary" className="min-h-[46px] flex-1 px-4" onPress={confirmDeleteKey} disabled={!config?.geminiApiKeyConfigured && apiKeyDraft.length === 0} />
+        </View>
       </View>
-    </AppCard>
+    </View>
   );
 }

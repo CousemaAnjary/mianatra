@@ -1,7 +1,7 @@
 import { Pressable } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppText } from "@/src/components/shared";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 type AddPageButtonProps = {
   onPress: () => void;
@@ -16,10 +16,12 @@ export function AddPageButton({ onPress, disabled = false }: AddPageButtonProps)
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={["min-h-[76px] flex-row items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[#D94B24] bg-[#FFFDF8] active:opacity-75", disabled ? "opacity-50" : ""].join(" ")}
+      className={["min-h-[62px] flex-row items-center justify-center gap-3 rounded-2xl border border-dashed border-[#D94B24] bg-[#FFF3EA] active:opacity-75", disabled ? "opacity-50" : ""].join(" ")}
     >
-      <FontAwesome5 name="plus" size={20} color={colors.textPrimary} />
-      <AppText variant="label">Choisir des images</AppText>
+      <FontAwesome5 name="plus" size={18} color={colors.primary} />
+      <AppText variant="label" className="text-[15px] leading-5 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+        Choisir des images
+      </AppText>
     </Pressable>
   );
 }

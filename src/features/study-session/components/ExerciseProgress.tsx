@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { AppText, ProgressBar } from "@/src/components/shared";
+import { fonts } from "@/src/theme";
 
 type ExerciseProgressProps = {
   current: number;
@@ -13,11 +14,13 @@ export function ExerciseProgress({ current, total }: ExerciseProgressProps) {
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: total, now: current }}
-      className="gap-2"
+      className="gap-2.5"
     >
       <View className="flex-row items-center justify-between">
-        <AppText variant="label">Exercice {current} sur {total}</AppText>
-        <AppText variant="caption" tone="secondary">
+        <AppText variant="label" className="text-[15px] leading-5" style={{ fontFamily: fonts.bold }}>
+          Exercice {current} sur {total}
+        </AppText>
+        <AppText tone="secondary" className="text-[14px] leading-5" style={{ fontFamily: fonts.semibold }}>
           {progress}%
         </AppText>
       </View>

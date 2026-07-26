@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppButton, AppCard, AppScreen, AppText, ScreenHeader } from "@/src/components/shared";
 import { demoSession } from "@/src/data/demo-data";
 import { CorrectionPanel } from "@/src/features/study-session/components";
@@ -11,12 +13,14 @@ import {
   type RealCorrectionView,
 } from "@/src/features/study-session/services/real-session-view.service";
 import type { SessionAttempt } from "@/src/features/study-session/types/study-session.types";
+import { colors, fonts, spacing } from "@/src/theme";
 
 export function generateStaticParams() {
   return [{ sessionId: demoSession.id }];
 }
 
 export default function SessionCorrectionScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ sessionId: string; attemptId?: string }>();
   const attemptId = Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId;
   const sessionId = Array.isArray(params.sessionId) ? params.sessionId[0] : params.sessionId;
@@ -123,9 +127,12 @@ export default function SessionCorrectionScreen() {
     };
 
     return (
-      <AppScreen>
-        <ScreenHeader title="Correction" subtitle={realCorrection.exercise.title} showBack />
-        <View className="gap-4">
+      <AppScreen
+        contentClassName="gap-4 pt-2"
+        contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+      >
+        <CorrectionHeader title={realCorrection.exercise.title} />
+        <View className="gap-3.5">
           <CorrectionPanel attempt={realAttempt} exercise={realCorrection.exercise} />
           {realError ? <AppText tone="error">{realError}</AppText> : null}
           <View className="gap-3">
@@ -133,6 +140,7 @@ export default function SessionCorrectionScreen() {
               title={realCorrection.isLastExercise ? "Voir mon rapport" : "Exercice suivant"}
               iconName={realCorrection.isLastExercise ? "chart-bar" : "arrow-right"}
               iconPosition="right"
+              className="min-h-[52px]"
               onPress={() => {
                 setRealError(null);
                 if (!realCorrection.isLastExercise) {
@@ -148,6 +156,7 @@ export default function SessionCorrectionScreen() {
               title="Revoir ma fiche"
               iconName="file-alt"
               variant="secondary"
+              className="min-h-[50px] bg-transparent"
               onPress={() => router.push({ pathname: "/course/[courseId]/revision-sheet", params: { courseId: realCorrection.session.courseId } })}
             />
           </View>
@@ -200,21 +209,26 @@ export default function SessionCorrectionScreen() {
   }
 
   return (
-    <AppScreen>
-      <ScreenHeader title="Correction" subtitle={currentExercise.title} showBack />
-      <View className="gap-4">
+    <AppScreen
+      contentClassName="gap-4 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
+      <CorrectionHeader title={currentExercise.title} />
+      <View className="gap-3.5">
         <CorrectionPanel attempt={lastAttempt} exercise={currentExercise} />
         <View className="gap-3">
           <AppButton
             title={isLastExercise ? "Voir mon rapport" : "Exercice suivant"}
             iconName={isLastExercise ? "chart-bar" : "arrow-right"}
             iconPosition="right"
+            className="min-h-[52px]"
             onPress={handleContinue}
           />
           <AppButton
             title="Revoir ma fiche"
             iconName="file-alt"
             variant="secondary"
+            className="min-h-[50px] bg-transparent"
             onPress={() =>
               router.push({
                 pathname: "/course/[courseId]/revision-sheet",
@@ -225,5 +239,29 @@ export default function SessionCorrectionScreen() {
         </View>
       </View>
     </AppScreen>
+  );
+}
+
+function CorrectionHeader({ title }: { title: string }) {
+  return (
+    <View className="flex-row items-center gap-3">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Revenir à la session"
+        hitSlop={spacing[2]}
+        onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
+        className="h-11 w-11 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
+      >
+        <FontAwesome5 name="arrow-left" size={18} color={colors.textPrimary} />
+      </Pressable>
+      <View className="min-w-0 flex-1 gap-1">
+        <AppText variant="heading" className="text-[24px] leading-[30px]" style={{ fontFamily: fonts.bold }}>
+          Correction
+        </AppText>
+        <AppText tone="secondary" numberOfLines={1} className="text-[15px] leading-5">
+          {title}
+        </AppText>
+      </View>
+    </View>
   );
 }

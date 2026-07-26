@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { AppCard, AppText } from "@/src/components/shared";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 import { CourseProgressRing } from "./CourseProgressRing";
 
 type CourseProgressCardProps = {
@@ -17,11 +17,22 @@ export function CourseProgressCard({
   needsWork,
 }: CourseProgressCardProps) {
   return (
-    <AppCard className="gap-4 bg-[#FAF1E2]">
-      <AppText variant="subtitle">Progression du chapitre</AppText>
+    <AppCard
+      className="gap-3 rounded-2xl border-[#DDE6D8] bg-[#EAF0E3] p-4"
+      style={{
+        shadowColor: "#6E442A",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 2,
+      }}
+    >
+      <AppText variant="label" className="text-[15px] leading-5" style={{ fontFamily: fonts.bold }}>
+        Progression du chapitre
+      </AppText>
       <View className="flex-row items-center gap-4">
-        <CourseProgressRing value={progress} />
-        <View className="flex-1 gap-3">
+        <CourseProgressRing value={progress} size={92} />
+        <View className="flex-1 gap-2.5">
           <LegendRow color={colors.secondary} label="Maîtrisé" value={`${mastered} notions`} />
           <LegendRow color={colors.accent} label="En progression" value={`${progressing} notions`} />
           <LegendRow color={colors.primary} label="À renforcer" value={`${needsWork} notions`} />
@@ -34,9 +45,9 @@ export function CourseProgressCard({
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <View className="flex-row items-center gap-2">
-      <View className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: color }} />
-      <AppText className="flex-1">{label}</AppText>
-      <AppText variant="label">{value}</AppText>
+      <View className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+      <AppText className="flex-1 text-[13px] leading-[18px]">{label}</AppText>
+      <AppText variant="label" className="text-[12px] leading-[18px]">{value}</AppText>
     </View>
   );
 }

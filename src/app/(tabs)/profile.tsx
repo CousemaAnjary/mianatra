@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingForm } from "@/src/components/core";
 import {
   AppButton,
@@ -13,7 +14,7 @@ import {
 import { AISettingsCard } from "@/src/features/ai-settings";
 import { onboardingGrades, type OnboardingProfileForm } from "@/src/features/profile";
 import { useProfileView } from "@/src/features/profile/hooks/use-profile-view";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 function initials(displayName: string) {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -31,6 +32,7 @@ function formFromProfile(profile: NonNullable<ReturnType<typeof useProfileView>[
 }
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const saveInFlightRef = useRef(false);
   const { errorMessage, isSaving, profile, reload, saveErrors, status, updateProfile } = useProfileView();
   const [isEditing, setIsEditing] = useState(false);
@@ -94,33 +96,57 @@ export default function ProfileScreen() {
   const progress = profile.statistics.averageProgress;
 
   return (
-    <AppScreen contentClassName="gap-5 pb-10">
-      <ScreenHeader title="Profil" subtitle="Ton espace de progression" />
+    <AppScreen
+      contentClassName="gap-4 pt-3"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 88, 118) }}
+    >
+      <View className="gap-1.5">
+        <AppText variant="heading" className="text-[24px] leading-[30px]" style={{ fontFamily: fonts.bold }}>
+          Profil
+        </AppText>
+        <AppText tone="secondary" className="text-[15px] leading-5">
+          Ton espace de progression
+        </AppText>
+      </View>
 
-      <View className="items-center gap-4">
-        <View className="h-[136px] w-[136px] items-center justify-center rounded-full bg-[#FAF1E2]">
-          <AppText variant="title" className="text-[#D94B24]">
-            {initials(profile.displayName)}
-          </AppText>
-        </View>
-        <View className="items-center gap-1">
-          <AppText variant="title">{profile.displayName}</AppText>
-          <AppText variant="subtitle" tone="secondary">
-            {`${profile.age} ans • ${profile.grade}`}
-          </AppText>
-          {profile.series ? <AppText tone="secondary">{profile.series}</AppText> : null}
-          {profile.schoolName ? <AppText tone="secondary">{profile.schoolName}</AppText> : null}
+      <AppCard
+        className="rounded-2xl bg-[#FFFDF8] px-4 py-4"
+        style={{
+          shadowColor: "#6E442A",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-center gap-3.5">
+          <View className="h-[70px] w-[70px] items-center justify-center rounded-2xl bg-[#D94B24]">
+            <AppText className="text-[26px] leading-8 text-white" style={{ fontFamily: fonts.bold }}>
+              {initials(profile.displayName)}
+            </AppText>
+          </View>
+          <View className="min-w-0 flex-1 gap-1">
+            <AppText numberOfLines={1} className="text-[22px] leading-[28px] text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+              {profile.displayName}
+            </AppText>
+            <AppText tone="secondary" className="text-[14px] leading-5" style={{ fontFamily: fonts.semibold }}>
+              {`${profile.age} ans • ${profile.grade}`}
+            </AppText>
+            {profile.series ? <AppText tone="secondary" numberOfLines={1} className="text-[13px] leading-5">{profile.series}</AppText> : null}
+            {profile.schoolName ? <AppText tone="secondary" numberOfLines={1} className="text-[13px] leading-5">{profile.schoolName}</AppText> : null}
+          </View>
         </View>
         <AppButton
           title={isEditing ? "Fermer la modification" : "Modifier le profil"}
           iconName={isEditing ? "times" : "pencil-alt"}
           variant="secondary"
+          className="mt-4 min-h-[48px] self-start px-5"
           onPress={() => {
             setForm(formFromProfile(profile));
             setIsEditing((value) => !value);
           }}
         />
-      </View>
+      </AppCard>
 
       {isEditing ? (
         <AppCard className="gap-4">
@@ -156,31 +182,54 @@ export default function ProfileScreen() {
         </AppCard>
       ) : null}
 
-      <AppCard className="gap-4">
-        <AppText variant="subtitle">Ma progression globale</AppText>
+      <AppCard
+        className="gap-4 rounded-2xl border-[#DDE6D8] bg-[#EAF0E3] px-4 py-4"
+        style={{
+          shadowColor: "#6E442A",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 10,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="gap-1">
+            <AppText className="text-[17px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+              Progression globale
+            </AppText>
+            <AppText tone="secondary" className="text-[13px] leading-5">
+              {"Vue d'ensemble de tes notions"}
+            </AppText>
+          </View>
+          <AppText className="text-[24px] leading-[30px] text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+            {progress}%
+          </AppText>
+        </View>
         <View className="flex-row items-center gap-4">
-          <View className="h-[118px] w-[118px] items-center justify-center">
-            <Svg width={118} height={118} viewBox="0 0 118 118" accessibilityLabel={`Progression globale ${progress} pour cent`}>
-              <Circle cx="59" cy="59" r="46" stroke={colors.surfaceSoft} strokeWidth="10" fill="none" />
+          <View className="h-[96px] w-[96px] items-center justify-center">
+            <Svg width={96} height={96} viewBox="0 0 96 96" accessibilityLabel={`Progression globale ${progress} pour cent`}>
+              <Circle cx="48" cy="48" r="37" stroke="#F8EFE0" strokeWidth="9" fill="none" />
               <Circle
-                cx="59"
-                cy="59"
-                r="46"
+                cx="48"
+                cy="48"
+                r="37"
                 stroke={colors.secondary}
-                strokeWidth="10"
+                strokeWidth="9"
                 fill="none"
-                strokeDasharray={`${2 * Math.PI * 46}`}
-                strokeDashoffset={`${2 * Math.PI * 46 * (1 - progress / 100)}`}
+                strokeDasharray={`${2 * Math.PI * 37}`}
+                strokeDashoffset={`${2 * Math.PI * 37 * (1 - progress / 100)}`}
                 strokeLinecap="round"
                 rotation="-90"
-                origin="59, 59"
+                origin="48, 48"
               />
             </Svg>
             <View className="absolute">
-              <AppText variant="heading">{progress}%</AppText>
+              <AppText className="text-[20px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+                {progress}%
+              </AppText>
             </View>
           </View>
-          <View className="flex-1 gap-3">
+          <View className="flex-1 gap-2.5">
             <LegendRow color={colors.secondary} label="Maîtrisé" value={`${profile.statistics.masteredConceptCount} notions`} />
             <LegendRow color={colors.accent} label="En progression" value={`${profile.statistics.progressingConceptCount} notions`} />
             <LegendRow color={colors.primary} label="À renforcer" value={`${profile.statistics.needsWorkConceptCount} notions`} />
@@ -200,18 +249,22 @@ export default function ProfileScreen() {
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <View className="flex-row items-center gap-2">
-      <View className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: color }} />
-      <AppText className="flex-1">{label}</AppText>
-      <AppText variant="label">{value}</AppText>
+      <View className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+      <AppText className="flex-1 text-[13px] leading-[18px] text-[#2F241F]">{label}</AppText>
+      <AppText className="text-[12px] leading-[18px] text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+        {value}
+      </AppText>
     </View>
   );
 }
 
 function StatPill({ label, value }: { label: string; value: number }) {
   return (
-    <View className="min-h-16 flex-1 justify-center rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
-      <AppText variant="heading">{value}</AppText>
-      <AppText variant="caption" tone="secondary">{label}</AppText>
+    <View className="min-h-[58px] flex-1 justify-center rounded-2xl border border-[#DDE6D8] bg-[#FFFDF8] px-4">
+      <AppText className="text-[20px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+        {value}
+      </AppText>
+      <AppText className="text-[12px] leading-4" tone="secondary">{label}</AppText>
     </View>
   );
 }

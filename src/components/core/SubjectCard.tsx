@@ -1,7 +1,7 @@
 import { Pressable, View } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { AppCard, AppText, ProgressBar } from "@/src/components/shared";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 export type SubjectCardData = {
   id: string;
@@ -28,31 +28,59 @@ export function SubjectCard({ subject, onPress }: SubjectCardProps) {
       onPress={onPress}
       className="active:opacity-80"
     >
-      <AppCard className="flex-row items-center gap-4 p-4">
+      <AppCard
+        className="flex-row items-center gap-3 rounded-xl px-3.5 py-3"
+        style={{
+          shadowColor: "#6E442A",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.07,
+          shadowRadius: 10,
+          elevation: 2,
+        }}
+      >
         <View
           accessibilityLabel={`Icône ${subject.name}`}
-          className="h-16 w-16 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: subject.color ?? colors.secondary }}
+          className="h-[48px] w-[48px] items-center justify-center rounded-xl"
+          style={{
+            backgroundColor: subject.color ?? colors.secondary,
+            shadowColor: subject.color ?? colors.secondary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.18,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
         >
           <FontAwesome5
             name={subject.iconName ?? "book-open"}
-            size={26}
+            size={20}
             color={colors.white}
           />
         </View>
-        <View className="flex-1 gap-2">
-          <View className="flex-row items-center gap-3">
-            <View className="flex-1">
-              <AppText variant="subtitle">{subject.name}</AppText>
-              <AppText tone="secondary">{chapterLabel}</AppText>
+        <View className="flex-1 gap-1.5">
+          <View className="flex-row items-start gap-3">
+            <View className="min-w-0 flex-1">
+              <AppText
+                variant="label"
+                numberOfLines={1}
+                className="text-[15px] leading-[19px]"
+                style={{ fontFamily: fonts.bold }}
+              >
+                {subject.name}
+              </AppText>
+              <AppText tone="secondary" numberOfLines={1} className="text-[12px] leading-[15px]">
+                {chapterLabel}
+              </AppText>
             </View>
-            <AppText variant="label">{subject.progress}%</AppText>
+            <AppText variant="label" className="text-[13px] leading-5">
+              {subject.progress}%
+            </AppText>
           </View>
           <ProgressBar
             value={subject.progress}
             accessibilityLabel={`Progression ${subject.name}`}
+            className="h-[7px]"
           />
-          <AppText tone="secondary">
+          <AppText tone="secondary" numberOfLines={1} className="text-[12px] leading-[15px]">
             {subject.mainWeakness ? `À renforcer : ${subject.mainWeakness}` : "Pas encore révisé"}
           </AppText>
         </View>

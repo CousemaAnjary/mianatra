@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AddPageButton, CoursePageGrid, ImportStepHeader } from "@/src/features/course-import/components";
 import type { Subject } from "@/src/db";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
@@ -22,10 +23,12 @@ import {
 } from "@/src/features/course-import/services/gallery-import.service";
 import { useCourseProcessing } from "@/src/features/course-processing";
 import { listSubjects } from "@/src/features/subjects";
+import { colors, fonts } from "@/src/theme";
 
 type AddCourseStep = 1 | 2 | 3;
 
 export default function AddCourseScreen() {
+  const insets = useSafeAreaInsets();
   const { subjectId } = useLocalSearchParams<{ subjectId?: string }>();
   const requestedSubjectId = Array.isArray(subjectId) ? subjectId[0] : subjectId;
   const [step, setStep] = useState<AddCourseStep>(1);
@@ -205,7 +208,10 @@ export default function AddCourseScreen() {
   const detectedAnalysis = processing.pendingAnalysis ?? processing.result.analysis;
 
   return (
-    <AppScreen contentClassName="gap-5 pb-8">
+    <AppScreen
+      contentClassName="gap-5 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
       <ImportStepHeader
         currentStep={step}
         onOptionsPress={() => Alert.alert("Options", "Options disponibles prochainement.")}
@@ -213,13 +219,21 @@ export default function AddCourseScreen() {
 
       {step === 1 ? (
         <>
-          <View className="gap-2">
-            <AppText variant="heading">Choisis la matière</AppText>
-            <AppText tone="secondary">Sélectionne une matière existante ou écris-en une nouvelle.</AppText>
+          <View className="gap-1.5">
+            <AppText
+              variant="heading"
+              className="text-[24px] leading-[30px]"
+              style={{ fontFamily: fonts.bold }}
+            >
+              Choisis la matière
+            </AppText>
+            <AppText tone="secondary" className="max-w-[390px] text-[15px] leading-[22px]">
+              Sélectionne une matière existante ou ajoute une nouvelle matière.
+            </AppText>
           </View>
 
           {subjects.length > 0 ? (
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2.5">
               {subjects.map((subject) => {
                 const isSelected = selectedSubjectId === subject.id;
                 return (
@@ -232,11 +246,27 @@ export default function AddCourseScreen() {
                       setSelectedSubjectId(subject.id);
                     }}
                     className={[
-                      "min-h-11 rounded-full border px-4 py-3 active:opacity-80",
+                      "min-h-10 rounded-full border px-4 py-2.5 active:opacity-80",
                       isSelected ? "border-[#D94B24] bg-[#D94B24]" : "border-[#E8D9C7] bg-[#FFFDF8]",
                     ].join(" ")}
+                    style={
+                      isSelected
+                        ? {
+                            shadowColor: colors.primary,
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.18,
+                            shadowRadius: 8,
+                            elevation: 3,
+                          }
+                        : undefined
+                    }
                   >
-                    <AppText variant="label" tone={isSelected ? "inverse" : "primary"}>
+                    <AppText
+                      variant="label"
+                      tone={isSelected ? "inverse" : "primary"}
+                      className="text-[14px] leading-5"
+                      style={{ fontFamily: fonts.bold }}
+                    >
                       {subject.name}
                     </AppText>
                   </Pressable>
@@ -245,23 +275,25 @@ export default function AddCourseScreen() {
             </View>
           ) : null}
 
-          <AppCard className="gap-4">
-            <View className="gap-2">
-              <AppText variant="label">Nouvelle matière</AppText>
-              <Input variant="rounded" size="xl" className="border-[#E8D9C7] bg-[#FFFDF8]">
-                <InputField
-                  value={subjectName}
-                  onChangeText={(nextSubjectName) => {
-                    setSubjectName(nextSubjectName);
-                    setSelectedSubjectId(null);
-                  }}
-                  placeholder="SVT"
-                  className="text-[#2F241F]"
-                  returnKeyType="done"
-                />
-              </Input>
-            </View>
-          </AppCard>
+          <View className="gap-2">
+            <AppText variant="label" className="text-[15px] leading-5">
+              Nouvelle matière
+            </AppText>
+            <Input variant="rounded" size="xl" className="h-[54px] border-[#E8D9C7] bg-white px-1">
+              <InputField
+                value={subjectName}
+                onChangeText={(nextSubjectName) => {
+                  setSubjectName(nextSubjectName);
+                  setSelectedSubjectId(null);
+                }}
+                placeholder="SVT"
+                placeholderTextColor="#8D8077"
+                className="text-[17px] leading-6 text-[#2F241F]"
+                style={{ fontFamily: fonts.medium }}
+                returnKeyType="done"
+              />
+            </Input>
+          </View>
 
           <AppButton
             title="Continuer"
@@ -269,44 +301,65 @@ export default function AddCourseScreen() {
             iconPosition="right"
             disabled={!normalizedSubjectName}
             onPress={goToPagesStep}
+            className="min-h-[54px]"
           />
         </>
       ) : null}
 
       {step === 2 ? (
         <>
-          <View className="gap-2">
-            <AppText variant="heading">Ajoute les pages de ton cours</AppText>
-            <AppText tone="secondary">Sélectionne, supprime et réordonne de 1 à {MAX_GALLERY_COURSE_PAGES} images.</AppText>
+          <View className="gap-1.5">
+            <AppText
+              variant="heading"
+              className="text-[24px] leading-[30px]"
+              style={{ fontFamily: fonts.bold }}
+            >
+              Ajoute les pages de ton cours
+            </AppText>
+            <AppText tone="secondary" className="max-w-[390px] text-[15px] leading-[22px]">
+              Sélectionne, supprime et réordonne de 1 à {MAX_GALLERY_COURSE_PAGES} images.
+            </AppText>
           </View>
 
-          <AppCard className="gap-4">
+          <View className="gap-3">
             <View className="gap-2">
-              <AppText variant="label">Titre du cours</AppText>
-              <Input variant="rounded" size="xl" className="border-[#E8D9C7] bg-[#FFFDF8]">
+              <AppText variant="label" className="text-[15px] leading-5">
+                Titre du cours
+              </AppText>
+              <Input variant="rounded" size="xl" className="h-[54px] border-[#E8D9C7] bg-white px-1">
                 <InputField
                   value={title}
                   onChangeText={setTitle}
                   placeholder="Nouveau cours"
-                  className="text-[#2F241F]"
+                  placeholderTextColor="#8D8077"
+                  className="text-[17px] leading-6 text-[#2F241F]"
+                  style={{ fontFamily: fonts.medium }}
                   returnKeyType="done"
                 />
               </Input>
             </View>
             <View className="gap-2">
-              <AppText variant="label">Classe</AppText>
-              <Input variant="rounded" size="xl" className="border-[#E8D9C7] bg-[#FFFDF8]">
+              <AppText variant="label" className="text-[15px] leading-5">
+                Classe
+              </AppText>
+              <Input variant="rounded" size="xl" className="h-[54px] border-[#E8D9C7] bg-white px-1">
                 <InputField
                   value={grade}
                   onChangeText={setGrade}
                   placeholder="2nde"
-                  className="text-[#2F241F]"
+                  placeholderTextColor="#8D8077"
+                  className="text-[17px] leading-6 text-[#2F241F]"
+                  style={{ fontFamily: fonts.medium }}
                   returnKeyType="done"
                 />
               </Input>
             </View>
-            <AppText tone="secondary">Matière : {normalizedSubjectName}</AppText>
-          </AppCard>
+            <View className="self-start rounded-full bg-[#FAF1E2] px-3 py-1.5">
+              <AppText tone="secondary" className="text-[13px] leading-4">
+                Matière : {normalizedSubjectName}
+              </AppText>
+            </View>
+          </View>
 
           {pages.length > 0 ? (
             <View className="gap-3">
@@ -324,19 +377,23 @@ export default function AddCourseScreen() {
               />
             </View>
           ) : (
-            <AppCard className="gap-3">
-              <AppText variant="subtitle">Aucune page ajoutée.</AppText>
-              <AppText tone="secondary">Choisis les photos ou captures de ton cours pour continuer.</AppText>
-            </AppCard>
+            <View className="rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8]/70 px-4 py-3">
+              <AppText variant="label" className="text-[15px] leading-5">
+                Aucune page ajoutée
+              </AppText>
+              <AppText tone="secondary" className="mt-1 text-[14px] leading-5">
+                Choisis les photos ou captures de ton cours pour continuer.
+              </AppText>
+            </View>
           )}
 
           <AddPageButton onPress={chooseImages} disabled={isPicking || isCompiling || Boolean(compiledCourseId)} />
           <View className="flex-row gap-3">
-            <AppButton title="Retour" iconName="arrow-left" variant="secondary" className="flex-1" onPress={() => setStep(1)} />
+            <AppButton title="Retour" iconName="arrow-left" variant="secondary" className="min-h-[52px] flex-1" onPress={() => setStep(1)} />
             <AppButton
               title="Compiler les pages"
               iconName="layer-group"
-              className="flex-[2]"
+              className="min-h-[52px] flex-[1.8]"
               loading={isCompiling}
               disabled={pages.length === 0 || !normalizedSubjectName || isPicking || isCompiling}
               accessibilityHint="Compile les pages sélectionnées avant l'analyse"

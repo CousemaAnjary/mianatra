@@ -1,6 +1,7 @@
 import { Alert, Image, Pressable, View } from "react-native";
 import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import {
   AppButton,
@@ -19,7 +20,7 @@ import { buildRealCourseResults, emptyCourseResultCounters, isExplicitDemoId, re
 import { useCourseProcessing } from "@/src/features/course-processing";
 import { countRealCourseExercises, startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
@@ -32,6 +33,7 @@ type CoursePrimaryAction = {
 };
 
 export default function CourseDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
   const isDemoCourse = isExplicitDemoId(resolvedCourseId, demoCourses.map((demoItem) => demoItem.id));
@@ -192,14 +194,27 @@ export default function CourseDetailScreen() {
   }
 
   return (
-    <AppScreen contentClassName="gap-5 pb-8">
+    <AppScreen
+      contentClassName="gap-4 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
       <CourseTopBar title={course.subject} onOptionsPress={showOptions} />
 
-      <View className="flex-row items-center gap-4">
-        <View className="flex-1 gap-3">
-          <AppText variant="title">{course.title}</AppText>
-          <AppText variant="subtitle" tone="secondary">
-            {course.pageCount} pages de cours • Dernière révision : {course.lastRevision}
+      <View className="relative min-h-[128px] justify-end pb-2 pr-[136px]" style={{ zIndex: 2 }}>
+        <View className="gap-1.5">
+          <AppText
+            variant="heading"
+            numberOfLines={2}
+            className="text-[23px] leading-[28px] text-[#2F241F]"
+            style={{ fontFamily: fonts.bold }}
+          >
+            {course.title}
+          </AppText>
+          <AppText tone="secondary" className="text-[12px] leading-4">
+            {course.pageCount} page{course.pageCount > 1 ? "s" : ""} de cours
+          </AppText>
+          <AppText tone="secondary" className="text-[12px] leading-4">
+            Dernière révision : {course.lastRevision}
           </AppText>
         </View>
         <Image
@@ -207,7 +222,8 @@ export default function CourseDetailScreen() {
           accessibilityLabel="Élève lisant son cours"
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          className="h-40 w-[130px] rounded-2xl"
+          className="absolute -bottom-7 right-0 h-[132px] w-[136px]"
+          style={{ zIndex: 3 }}
         />
       </View>
 
@@ -218,39 +234,40 @@ export default function CourseDetailScreen() {
         needsWork={progressCounters.needsWork}
       />
 
-      <CourseActionTabs
-        tabs={[
-          {
-            id: "revision",
-            label: "Ma fiche",
-            iconName: "file-alt",
-            onPress: () =>
-              router.push({
-                pathname: "/course/[courseId]/revision-sheet",
-                params: { courseId: course.id },
-              }),
-          },
-          {
-            id: "exercises",
-            label: "Mes exercices",
-            iconName: "chart-line",
-            disabled: Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0),
-            onPress: () => void openExercises(),
-          },
-          {
-            id: "results",
-            label: "Mes résultats",
-            iconName: "link",
-            onPress: () =>
-              router.push({
-                pathname: "/course/[courseId]/results",
-                params: { courseId: course.id },
-              }),
-          },
-        ]}
-      />
-
-      <CourseSummary items={summaryItems} />
+      <AppCard className="overflow-hidden rounded-2xl p-0">
+        <CourseActionTabs
+          tabs={[
+            {
+              id: "revision",
+              label: "Ma fiche",
+              iconName: "file-alt",
+              onPress: () =>
+                router.push({
+                  pathname: "/course/[courseId]/revision-sheet",
+                  params: { courseId: course.id },
+                }),
+            },
+            {
+              id: "exercises",
+              label: "Mes exercices",
+              iconName: "chart-line",
+              disabled: Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0),
+              onPress: () => void openExercises(),
+            },
+            {
+              id: "results",
+              label: "Mes résultats",
+              iconName: "link",
+              onPress: () =>
+                router.push({
+                  pathname: "/course/[courseId]/results",
+                  params: { courseId: course.id },
+                }),
+            },
+          ]}
+        />
+        <CourseSummary items={summaryItems} />
+      </AppCard>
 
       {realDetail ? (
         <AppCard className="gap-4">
@@ -300,6 +317,7 @@ export default function CourseDetailScreen() {
         iconName={action.iconName}
         loading={["analyzing", "persisting", "generating_sheet", "generating_exercises"].includes(processing.status)}
         onPress={action.onPress}
+        className="min-h-[54px]"
       />
       <View className="flex-row gap-3">
         <Pressable
@@ -309,12 +327,14 @@ export default function CourseDetailScreen() {
           disabled={Boolean(realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0)}
           onPress={() => void openExercises()}
           className={[
-            "min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80",
+            "min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-[#E8D9C7] bg-[#FFFDF8] px-2 active:opacity-80",
             realDetail && realExerciseCount === 0 && processing.result.exercises.length === 0 ? "opacity-45" : "",
           ].join(" ")}
         >
-          <FontAwesome5 name="pen" size={16} color={colors.textPrimary} />
-          <AppText variant="label">Faire des exercices</AppText>
+          <FontAwesome5 name="pen" size={13} color={colors.textPrimary} />
+          <AppText variant="label" numberOfLines={1} className="text-[12px] leading-4" style={{ fontFamily: fonts.semibold }}>
+            Exercices
+          </AppText>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -325,10 +345,12 @@ export default function CourseDetailScreen() {
               params: { courseId: course.id },
             })
           }
-          className="min-h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
+          className="min-h-[48px] flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-[#E8D9C7] bg-[#FFFDF8] px-2 active:opacity-80"
         >
-          <FontAwesome5 name="chart-line" size={16} color={colors.textPrimary} />
-          <AppText variant="label">Voir mes résultats</AppText>
+          <FontAwesome5 name="chart-line" size={13} color={colors.textPrimary} />
+          <AppText variant="label" numberOfLines={1} className="text-[12px] leading-4" style={{ fontFamily: fonts.semibold }}>
+            Résultats
+          </AppText>
         </Pressable>
       </View>
     </AppScreen>

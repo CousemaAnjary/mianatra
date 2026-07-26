@@ -1,17 +1,20 @@
 import { View } from "react-native";
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppButton, AppCard, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { CourseProgressRing, CourseTopBar } from "@/src/features/courses/components";
-import { CourseResultSummary, RecentActivityList } from "@/src/features/progress/components";
+import { RecentActivityList } from "@/src/features/progress/components";
 import { isExplicitDemoId, loadRealCourseResults, type RealCourseResultsState } from "@/src/features/courses";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
+import { fonts } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
 }
 
 export default function CourseResultsScreen() {
+  const insets = useSafeAreaInsets();
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
   const isDemoCourse = isExplicitDemoId(resolvedCourseId, demoCourses.map((demoItem) => demoItem.id));
@@ -82,27 +85,45 @@ export default function CourseResultsScreen() {
   }
 
   return (
-    <AppScreen contentClassName="gap-5 pb-8">
+    <AppScreen
+      contentClassName="gap-4 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
       <CourseTopBar title="Mes résultats" />
       <View className="gap-2">
-        <AppText variant="title">Mes résultats</AppText>
-        <AppText variant="subtitle" tone="secondary">
+        <AppText
+          variant="heading"
+          className="text-[25px] leading-[31px] text-[#2F241F]"
+          style={{ fontFamily: fonts.bold }}
+        >
+          Bilan du chapitre
+        </AppText>
+        <AppText tone="secondary" className="text-[15px] leading-5" style={{ fontFamily: fonts.semibold }}>
           {title}
         </AppText>
       </View>
 
-      <CourseResultSummary counters={results.counters} />
-
-      <AppCard className="gap-4">
-        <AppText variant="subtitle">Progression du chapitre</AppText>
+      <AppCard
+        className="gap-4 rounded-2xl bg-[#FFFDF8] px-4 py-4"
+        style={{
+          shadowColor: "#6E442A",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 1,
+        }}
+      >
+        <AppText className="text-[17px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+          Progression du chapitre
+        </AppText>
         <View className="flex-row items-center gap-4">
-          <CourseProgressRing value={results.progress} size={88} />
-          <View className="flex-1 gap-2">
+          <CourseProgressRing value={results.progress} size={82} />
+          <View className="flex-1 gap-2.5">
             <ProgressBar
               value={results.progress}
               accessibilityLabel={`Progression du chapitre : ${results.progress} pour cent`}
             />
-            <AppText tone="secondary">
+            <AppText tone="secondary" className="text-[14px] leading-5">
               {isDemoCourse ? `${results.progress} % de progression de démonstration.` : `${results.progress} % de progression.`}
             </AppText>
           </View>

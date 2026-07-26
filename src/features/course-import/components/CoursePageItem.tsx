@@ -31,7 +31,7 @@ export function CoursePageItem({
   const pageNumber = index + 1;
 
   return (
-    <View className="aspect-[3/4] flex-1 overflow-hidden rounded-2xl border border-[#E8D9C7] bg-[#FAF1E2]">
+    <View className="aspect-[4/5] flex-1 overflow-hidden rounded-2xl border border-[#E8D9C7] bg-[#FAF1E2]">
       <Image
         source={{ uri: page.sourceUri }}
         accessibilityLabel={`Page ${pageNumber}${page.fileName ? `, ${page.fileName}` : ""}`}
@@ -39,7 +39,7 @@ export function CoursePageItem({
         resizeMode="cover"
         className="h-full w-full"
       />
-      <View className="absolute bottom-3 left-3 h-11 w-11 items-center justify-center rounded-full bg-[#D94B24]">
+      <View className="absolute bottom-2 left-2 h-9 w-9 items-center justify-center rounded-full bg-[#D94B24]">
         <AppText variant="label" tone="inverse">
           {pageNumber}
         </AppText>
@@ -48,9 +48,9 @@ export function CoursePageItem({
         accessibilityRole="button"
         accessibilityLabel={`Supprimer la page ${pageNumber}`}
         onPress={() => onRemove(page.id)}
-        className="absolute right-2 top-2 h-11 w-11 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
+        className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80"
       >
-        <FontAwesome5 name="times" size={18} color={colors.textPrimary} />
+        <FontAwesome5 name="times" size={16} color={colors.textPrimary} />
       </Pressable>
       <View className="absolute bottom-2 right-2 flex-row gap-1">
         <Pressable
@@ -59,7 +59,7 @@ export function CoursePageItem({
           accessibilityState={{ disabled: !canMoveLeft }}
           disabled={!canMoveLeft}
           onPress={() => onMoveLeft(page.id)}
-          className={["h-9 w-9 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveLeft ? "opacity-35" : ""].join(" ")}
+          className={["h-8 w-8 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveLeft ? "opacity-35" : ""].join(" ")}
         >
           <FontAwesome5 name="arrow-left" size={14} color={colors.textPrimary} />
         </Pressable>
@@ -69,7 +69,7 @@ export function CoursePageItem({
           accessibilityState={{ disabled: !canMoveRight }}
           disabled={!canMoveRight}
           onPress={() => onMoveRight(page.id)}
-          className={["h-9 w-9 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveRight ? "opacity-35" : ""].join(" ")}
+          className={["h-8 w-8 items-center justify-center rounded-full border border-[#E8D9C7] bg-[#FFFDF8] active:opacity-80", !canMoveRight ? "opacity-35" : ""].join(" ")}
         >
           <FontAwesome5 name="arrow-right" size={14} color={colors.textPrimary} />
         </Pressable>

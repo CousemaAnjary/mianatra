@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   AppButton,
   AppCard,
@@ -22,6 +23,7 @@ import {
 } from "@/src/features/study-session/components";
 import { useDemoSession } from "@/src/features/study-session/context/DemoSessionProvider";
 import { canSubmitExerciseAnswer, getAnswerControlKind } from "@/src/features/study-session/utils/session-answer-rendering";
+import { fonts } from "@/src/theme";
 
 declare const __DEV__: boolean | undefined;
 
@@ -34,6 +36,7 @@ export function generateStaticParams() {
 }
 
 export default function SessionScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ sessionId: string }>();
   const sessionId = Array.isArray(params.sessionId) ? params.sessionId[0] : params.sessionId;
   const resolvedSessionId = sessionId ?? demoSession.id;
@@ -201,71 +204,91 @@ export default function SessionScreen() {
 
   if (realView?.status === "ready") {
     return (
-      <AppScreen>
-        <ScreenHeader title="Session d'exercices" subtitle="Exercices réels" />
-        <View className="gap-4">
+      <AppScreen
+        contentClassName="gap-4 pt-2"
+        contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+      >
+        <View className="gap-1.5">
+          <AppText variant="heading" className="text-[24px] leading-[30px]" style={{ fontFamily: fonts.bold }}>
+            {"Session d'exercices"}
+          </AppText>
+          <AppText tone="secondary" className="text-[15px] leading-5">
+            Exercices réels
+          </AppText>
+        </View>
+        <View className="gap-3.5">
           <ExerciseProgress current={realView.currentIndex + 1} total={realView.exercises.length} />
           <ExerciseContent exercise={realView.currentExercise} />
-          <AppCard className="gap-4">
-            <ExerciseAnswerControl
-              answer={realAnswer}
-              exercise={realView.currentExercise}
-              onChangeAnswer={(nextAnswer) => {
-                setErrorMessage(null);
-                setRealAnswer(nextAnswer);
-              }}
+          <ExerciseAnswerControl
+            answer={realAnswer}
+            exercise={realView.currentExercise}
+            onChangeAnswer={(nextAnswer) => {
+              setErrorMessage(null);
+              setRealAnswer(nextAnswer);
+            }}
+          />
+          {realHintShown ? <HintPanel hint={realView.currentExercise.hint} /> : null}
+          {errorMessage ? (
+            <AppText accessibilityRole="alert" tone="error">
+              {errorMessage}
+            </AppText>
+          ) : null}
+          {getAnswerControlKind(realView.currentExercise.type) === "unsupported" ? (
+            <AppButton
+              title="Retour au cours"
+              iconName="arrow-left"
+              variant="secondary"
+              className="min-h-[50px]"
+              onPress={() => router.replace({ pathname: "/course/[courseId]", params: { courseId: realView.session.courseId } })}
             />
-            {realHintShown ? <HintPanel hint={realView.currentExercise.hint} /> : null}
-            {errorMessage ? (
-              <AppText accessibilityRole="alert" tone="error">
-                {errorMessage}
-              </AppText>
-            ) : null}
-            <View className="gap-3">
-              {getAnswerControlKind(realView.currentExercise.type) === "unsupported" ? (
-                <AppButton title="Retour au cours" iconName="arrow-left" variant="secondary" onPress={() => router.replace({ pathname: "/course/[courseId]", params: { courseId: realView.session.courseId } })} />
-              ) : (
-                <AppButton
-                  title={realHintShown ? "Indice affiché" : "Voir un indice"}
-                  iconName="lightbulb"
-                  variant="tertiary"
-                  disabled={realHintShown}
-                  onPress={() => setRealHintShown(true)}
-                />
-              )}
-              <AppButton
-                title="Valider ma réponse"
-                iconName="check"
-                disabled={!realCanSubmit}
-                loading={isSubmittingRealAnswer}
-                onPress={() => {
-                  if (isSubmittingRealAnswer || !realCanSubmit) {
-                    setErrorMessage("Écris ou choisis une réponse avant de demander la correction.");
-                    return;
-                  }
-                  setIsSubmittingRealAnswer(true);
-                  submitRealSessionAnswer({
-                    sessionId: resolvedSessionId,
-                    exerciseId: realView.currentExercise.id,
-                    answer: realAnswer,
-                    usedHint: realHintShown,
-                  })
-                    .then(({ attempt }) => {
-                      setErrorMessage(null);
-                      router.push({
-                        pathname: "/session/[sessionId]/correction",
-                        params: { sessionId: resolvedSessionId, attemptId: attempt.id },
-                      });
-                    })
-                    .catch(() => {
-                      setErrorMessage("Impossible d'enregistrer ta réponse. Réessaie.");
-                    })
-                    .finally(() => setIsSubmittingRealAnswer(false));
-                }}
-              />
-            </View>
-          </AppCard>
-          <AppButton title="Quitter la session" iconName="times" variant="secondary" onPress={handleExit} />
+          ) : (
+            <AppButton
+              title={realHintShown ? "Indice affiché" : "Voir un indice"}
+              iconName="lightbulb"
+              variant="tertiary"
+              disabled={realHintShown}
+              className="min-h-[48px]"
+              onPress={() => setRealHintShown(true)}
+            />
+          )}
+          <AppButton
+            title="Valider ma réponse"
+            iconName="check"
+            disabled={!realCanSubmit}
+            loading={isSubmittingRealAnswer}
+            className="min-h-[52px]"
+            onPress={() => {
+              if (isSubmittingRealAnswer || !realCanSubmit) {
+                setErrorMessage("Écris ou choisis une réponse avant de demander la correction.");
+                return;
+              }
+              setIsSubmittingRealAnswer(true);
+              submitRealSessionAnswer({
+                sessionId: resolvedSessionId,
+                exerciseId: realView.currentExercise.id,
+                answer: realAnswer,
+                usedHint: realHintShown,
+              })
+                .then(({ attempt }) => {
+                  setErrorMessage(null);
+                  router.push({
+                    pathname: "/session/[sessionId]/correction",
+                    params: { sessionId: resolvedSessionId, attemptId: attempt.id },
+                  });
+                })
+                .catch(() => {
+                  setErrorMessage("Impossible d'enregistrer ta réponse. Réessaie.");
+                })
+                .finally(() => setIsSubmittingRealAnswer(false));
+            }}
+          />
+          <AppButton
+            title="Quitter la session"
+            iconName="times"
+            variant="secondary"
+            className="min-h-[50px] bg-transparent"
+            onPress={handleExit}
+          />
         </View>
       </AppScreen>
     );
@@ -291,44 +314,45 @@ export default function SessionScreen() {
   }
 
   return (
-    <AppScreen>
+    <AppScreen
+      contentClassName="gap-4 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
       <ScreenHeader
         title={state.mode === "targeted" ? "Série ciblée" : "Session d'exercices"}
         subtitle="Fonctions du second degré"
       />
-      <View className="gap-4">
+      <View className="gap-3.5">
         <ExerciseProgress current={state.currentIndex + 1} total={state.exercises.length} />
         <ExerciseContent exercise={currentExercise} />
-        <AppCard className="gap-4">
-          <ExerciseAnswerControl
-            answer={answer}
-            exercise={currentExercise}
-            onChangeAnswer={(nextAnswer) => {
-              setErrorMessage(null);
-              setAnswer(currentExercise.id, nextAnswer);
-            }}
-          />
-          {state.hintsUsed[currentExercise.id] ? <HintPanel hint={currentExercise.hint} /> : null}
-          {errorMessage ? (
-            <AppText accessibilityRole="alert" tone="error">
-              {errorMessage}
-            </AppText>
-          ) : null}
-          <View className="gap-3">
-            <AppButton
-              title={state.hintsUsed[currentExercise.id] ? "Indice affiché" : "Voir un indice"}
-              iconName="lightbulb"
-              variant="tertiary"
-              disabled={state.hintsUsed[currentExercise.id]}
-              onPress={() => showHint(currentExercise.id)}
-            />
-            <AppButton title="Valider ma réponse" iconName="check" disabled={!demoCanSubmit} onPress={handleSubmit} />
-          </View>
-        </AppCard>
+        <ExerciseAnswerControl
+          answer={answer}
+          exercise={currentExercise}
+          onChangeAnswer={(nextAnswer) => {
+            setErrorMessage(null);
+            setAnswer(currentExercise.id, nextAnswer);
+          }}
+        />
+        {state.hintsUsed[currentExercise.id] ? <HintPanel hint={currentExercise.hint} /> : null}
+        {errorMessage ? (
+          <AppText accessibilityRole="alert" tone="error">
+            {errorMessage}
+          </AppText>
+        ) : null}
+        <AppButton
+          title={state.hintsUsed[currentExercise.id] ? "Indice affiché" : "Voir un indice"}
+          iconName="lightbulb"
+          variant="tertiary"
+          disabled={state.hintsUsed[currentExercise.id]}
+          className="min-h-[48px]"
+          onPress={() => showHint(currentExercise.id)}
+        />
+        <AppButton title="Valider ma réponse" iconName="check" disabled={!demoCanSubmit} className="min-h-[52px]" onPress={handleSubmit} />
         <AppButton
           title="Quitter la session"
           iconName="times"
           variant="secondary"
+          className="min-h-[50px] bg-transparent"
           onPress={handleExit}
         />
       </View>

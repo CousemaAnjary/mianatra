@@ -1,8 +1,26 @@
 import { Tabs } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { colors } from "@/src/theme";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, fonts } from "@/src/theme";
+
+type TabIconProps = {
+  color: string;
+  name: React.ComponentProps<typeof FontAwesome5>["name"];
+};
+
+function TabIcon({ color, name }: TabIconProps) {
+  return (
+    <View className="h-8 w-14 items-center justify-center">
+      <FontAwesome5 name={name} size={20} color={color} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 28);
+
   return (
     <Tabs
       screenOptions={{
@@ -10,15 +28,26 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          height: 76,
-          paddingBottom: 14,
+          minHeight: 60 + bottomInset,
+          paddingBottom: bottomInset,
           paddingTop: 8,
+          paddingHorizontal: 18,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          borderTopWidth: 1,
+          shadowColor: "#6E442A",
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.08,
+          shadowRadius: 14,
+          elevation: 12,
+        },
+        tabBarItemStyle: {
+          paddingTop: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "700",
+          fontFamily: fonts.bold,
+          fontSize: 11,
+          lineHeight: 15,
         },
       }}
     >
@@ -26,8 +55,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Accueil",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="home" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="home" color={color} />
           ),
         }}
       />
@@ -35,8 +64,8 @@ export default function TabLayout() {
         name="courses"
         options={{
           title: "Mes cours",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="book-open" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="book-open" color={color} />
           ),
         }}
       />
@@ -44,8 +73,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="user-alt" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <TabIcon name="user-alt" color={color} />
           ),
         }}
       />

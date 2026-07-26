@@ -1,6 +1,7 @@
-import { Alert } from "react-native";
+import { Alert, View } from "react-native";
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppButton, AppCard, AppScreen, AppText } from "@/src/components/shared";
 import { CourseTopBar } from "@/src/features/courses/components";
 import { getCourseDetail, isExplicitDemoId } from "@/src/features/courses";
@@ -8,12 +9,14 @@ import { RevisionSection } from "@/src/features/revision/components";
 import { loadLatestRevisionSheet, type RevisionSheetViewState } from "@/src/features/revision-sheet/services/revision-sheet-view.service";
 import { startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
 import { demoCourses, demoRevisionSheet, demoSession } from "@/src/data/demo-data";
+import { colors, fonts } from "@/src/theme";
 
 export function generateStaticParams(): Record<string, string>[] {
   return demoCourses.map((course) => ({ courseId: course.id }));
 }
 
 export default function RevisionSheetScreen() {
+  const insets = useSafeAreaInsets();
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const resolvedCourseId = Array.isArray(courseId) ? courseId[0] : courseId;
   const [realCourseExists, setRealCourseExists] = useState(false);
@@ -138,18 +141,28 @@ export default function RevisionSheetScreen() {
     ] as const;
 
     return (
-      <AppScreen contentClassName="gap-4 pb-8">
+      <AppScreen
+        contentClassName="gap-4 pt-2"
+        contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+      >
         <CourseTopBar title="Ma fiche" />
-        <AppText variant="heading">{content.title}</AppText>
-        <AppText tone="secondary">{content.summary}</AppText>
+        <View className="gap-2">
+          <AppText
+            variant="heading"
+            className="text-[25px] leading-[31px] text-[#2F241F]"
+            style={{ fontFamily: fonts.bold }}
+          >
+            {content.title}
+          </AppText>
+          <AppText tone="secondary" className="text-[15px] leading-[22px]">
+            {content.summary}
+          </AppText>
+        </View>
         {sections.map(([title, items]) => (
-          <AppCard key={title} className="gap-3">
-            <AppText variant="subtitle">{title}</AppText>
-            {items.length > 0 ? items.map((item) => <AppText key={item} tone="secondary">• {item}</AppText>) : <AppText tone="muted">Aucun élément.</AppText>}
-          </AppCard>
+          <RevisionListSection key={title} title={title} items={items} />
         ))}
         {sessionError ? <AppText tone="error">{sessionError}</AppText> : null}
-        <AppButton title="Faire des exercices" iconName="pen" onPress={() => void startExercises()} />
+        <AppButton title="Faire des exercices" iconName="pen" className="min-h-[54px]" onPress={() => void startExercises()} />
       </AppScreen>
     );
   }
@@ -174,7 +187,10 @@ export default function RevisionSheetScreen() {
   }
 
   return (
-    <AppScreen contentClassName="gap-4 pb-8">
+    <AppScreen
+      contentClassName="gap-4 pt-2"
+      contentStyle={{ paddingBottom: Math.max(insets.bottom + 28, 58) }}
+    >
       <CourseTopBar
         title="Ma fiche"
         onOptionsPress={() =>
@@ -194,8 +210,44 @@ export default function RevisionSheetScreen() {
       <AppButton
         title="Faire des exercices"
         iconName="pen"
+        className="min-h-[54px]"
         onPress={() => void startExercises()}
       />
     </AppScreen>
+  );
+}
+
+function RevisionListSection({ title, items }: { title: string; items: readonly string[] }) {
+  return (
+    <AppCard
+      className="gap-3 rounded-2xl bg-[#FFFDF8] px-4 py-4"
+      style={{
+        shadowColor: "#6E442A",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 1,
+      }}
+    >
+      <AppText className="text-[17px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
+        {title}
+      </AppText>
+      {items.length > 0 ? (
+        <View className="gap-2.5">
+          {items.map((item) => (
+            <View key={item} className="flex-row items-start gap-2.5">
+              <View className="mt-[8px] h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.secondary }} />
+              <AppText tone="secondary" className="flex-1 text-[14px] leading-[21px]">
+                {item}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <AppText tone="muted" className="text-[14px] leading-[21px]">
+          Aucun élément.
+        </AppText>
+      )}
+    </AppCard>
   );
 }
