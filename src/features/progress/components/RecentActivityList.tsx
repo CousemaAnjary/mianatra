@@ -23,6 +23,11 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
       <AppText className="text-[17px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
         Dernières activités
       </AppText>
+      {activities.length === 0 ? (
+        <AppText tone="secondary" className="text-[14px] leading-5">
+          Aucune activité pour le moment.
+        </AppText>
+      ) : null}
       {activities.map((activity, index) => (
         <View
           key={activity.id}

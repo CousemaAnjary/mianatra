@@ -1,9 +1,12 @@
 import type { CourseDetail } from "@/src/db";
+import { buildCourseProgressSummary } from "@/src/features/progress/domain";
 
 export type CourseResultCounters = {
+  totalConcepts: number;
   mastered: number;
   progressing: number;
   needsWork: number;
+  notStarted: number;
 };
 
 export type CourseRecentActivity = {
@@ -24,9 +27,11 @@ export type RealCourseResultsState =
   | { status: "ready"; courseTitle: string; results: CourseRouteResults };
 
 export const emptyCourseResultCounters: CourseResultCounters = {
+  totalConcepts: 0,
   mastered: 0,
   progressing: 0,
   needsWork: 0,
+  notStarted: 0,
 };
 
 export function isExplicitDemoId(id: string | undefined, demoIds: readonly string[]) {
@@ -45,45 +50,8 @@ export function resolveExerciseSessionTarget(input: {
 }
 
 export function buildRealCourseResults(detail: Pick<CourseDetail, "course" | "concepts">): CourseRouteResults {
-  const progressRows = detail.concepts
-    .map((concept) => ({ concept, progress: concept.progress }))
-    .filter((item): item is { concept: CourseDetail["concepts"][number]; progress: NonNullable<CourseDetail["concepts"][number]["progress"]> } =>
-      item.progress !== null,
-    );
-
-  if (progressRows.length === 0) {
-    return {
-      counters: emptyCourseResultCounters,
-      progress: 0,
-      recentActivities: [],
-    };
-  }
-
-  const counters = progressRows.reduce<CourseResultCounters>(
-    (acc, item) => {
-      if (item.progress.status === "mastered") {
-        acc.mastered += 1;
-      } else if (item.progress.status === "needs_reinforcement") {
-        acc.needsWork += 1;
-      } else if (item.progress.status === "in_progress") {
-        acc.progressing += 1;
-      }
-      return acc;
-    },
-    { ...emptyCourseResultCounters },
-  );
-  const progress = Math.round(progressRows.reduce((sum, item) => sum + item.progress.score, 0) / progressRows.length);
-  const recentActivities = progressRows
-    .filter((item) => item.progress.attemptsCount > 0)
-    .sort((left, right) => String(right.progress.lastPracticedAt ?? right.progress.updatedAt).localeCompare(String(left.progress.lastPracticedAt ?? left.progress.updatedAt)))
-    .slice(0, 3)
-    .map((item) => ({
-      id: item.concept.id,
-      title: item.concept.name,
-      score: Math.round(item.progress.score),
-      iconName: item.progress.status === "mastered" ? "check-circle" : item.progress.status === "needs_reinforcement" ? "exclamation-circle" : "chart-line",
-    }));
-
+  const summary = buildCourseProgressSummary(detail.concepts);
+  const { progress, recentActivities, ...counters } = summary;
   return { counters, progress, recentActivities };
 }
 

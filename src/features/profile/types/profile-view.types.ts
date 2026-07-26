@@ -5,6 +5,7 @@ export type ProfileViewStatistics = {
   masteredConceptCount: number;
   progressingConceptCount: number;
   needsWorkConceptCount: number;
+  notStartedConceptCount: number;
 };
 
 export type ProfileViewData = {

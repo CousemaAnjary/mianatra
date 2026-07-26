@@ -13,6 +13,7 @@ export function CourseResultSummary({ counters }: CourseResultSummaryProps) {
       <CounterCard label="Maîtrisé" value={`${counters.mastered} notions`} color={colors.secondary} />
       <CounterCard label="En progression" value={`${counters.progressing} notions`} color={colors.accent} />
       <CounterCard label="À renforcer" value={`${counters.needsWork} notions`} color={colors.primary} />
+      {counters.notStarted > 0 ? <CounterCard label="À découvrir" value={`${counters.notStarted} notions`} color={colors.textMuted} /> : null}
     </View>
   );
 }

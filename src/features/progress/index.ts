@@ -1,5 +1,12 @@
-export { calculateConceptScore, calculateCourseProgress as calculateCourseProgressValue, determineConceptStatus } from "./domain";
-export type { ConceptScoreInput } from "./domain";
+export {
+  buildCourseProgressSummary,
+  calculateConceptScore,
+  calculateCourseProgress as calculateCourseProgressValue,
+  determineConceptStatus,
+  emptyCourseProgressSummary,
+  toProgressBucket,
+} from "./domain";
+export type { ConceptScoreInput, CourseProgressSummary, ProgressConceptInput, ProgressRecentActivity } from "./domain";
 export {
   calculateCourseProgress,
   createProgressService,

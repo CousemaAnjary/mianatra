@@ -5,6 +5,7 @@ import { calculateConceptScore, calculateCourseProgress as calculateCourseProgre
 type ProgressServiceDeps = {
   attempts: {
     findAllByExercise: (exerciseId: string) => Promise<ExerciseAttempt[]>;
+    findAllByConcept: (conceptId: string) => Promise<ExerciseAttempt[]>;
   };
   concepts: {
     findAllByCourse: (courseId: string) => Promise<Concept[]>;
@@ -28,10 +29,10 @@ export function createProgressService(deps: ProgressServiceDeps) {
       if (!exercise) {
         throw new ExerciseNotFoundError();
       }
-      const exerciseAttempts = await deps.attempts.findAllByExercise(exercise.id);
-      const attemptsCount = exerciseAttempts.length;
-      const correctCount = exerciseAttempts.filter((row) => row.isCorrect).length;
-      const usedHintCount = exerciseAttempts.filter((row) => row.usedHint).length;
+      const conceptAttempts = await deps.attempts.findAllByConcept(exercise.conceptId);
+      const attemptsCount = conceptAttempts.length;
+      const correctCount = conceptAttempts.filter((row) => row.isCorrect).length;
+      const usedHintCount = conceptAttempts.filter((row) => row.usedHint).length;
       const score = calculateConceptScore({ attemptsCount, correctCount, usedHintCount });
       return deps.progress.upsert(exercise.conceptId, {
         score,
@@ -41,13 +42,22 @@ export function createProgressService(deps: ProgressServiceDeps) {
         lastPracticedAt: attempt.createdAt,
       });
     },
-    calculateCourseProgress: async (courseId: string) => calculateCourseProgressValue(await deps.progress.findAllByCourse(courseId)),
+    calculateCourseProgress: async (courseId: string) => {
+      const concepts = await deps.concepts.findAllByCourse(courseId);
+      const progressRows = await deps.progress.findAllByCourse(courseId);
+      return calculateCourseProgressValue(
+        concepts.map((concept) => ({
+          ...concept,
+          progress: progressRows.find((row) => row.conceptId === concept.id) ?? null,
+        })),
+      );
+    },
     getWeakConcepts: async (courseId: string) => {
       const concepts = await deps.concepts.findAllByCourse(courseId);
       const progressRows = await deps.progress.findAllByCourse(courseId);
       return concepts.filter((concept) => {
         const progress = progressRows.find((row) => row.conceptId === concept.id);
-        return progress?.status === "needs_reinforcement" || (progress !== undefined && progress.score < 50);
+        return progress?.status === "needs_reinforcement";
       });
     },
     getStrongConcepts: async (courseId: string) => {
@@ -55,7 +65,7 @@ export function createProgressService(deps: ProgressServiceDeps) {
       const progressRows = await deps.progress.findAllByCourse(courseId);
       return concepts.filter((concept) => {
         const progress = progressRows.find((row) => row.conceptId === concept.id);
-        return progress?.status === "mastered" || (progress !== undefined && progress.score >= 85);
+        return progress?.status === "mastered";
       });
     },
   };

@@ -1,4 +1,5 @@
-import type { ConceptProgress, Course, StudySession, UserProfile } from "@/src/db";
+import type { Course, CourseDetail, StudySession, UserProfile } from "@/src/db";
+import { buildCourseProgressSummary } from "@/src/features/progress/domain";
 import { ProfileNotFoundError } from "@/src/features/shared";
 import type { ProfileInput } from "../schemas/profile.schemas";
 import { validateOnboardingProfileForm, type OnboardingProfileForm } from "./onboarding-profile.service";
@@ -11,9 +12,7 @@ type ProfileViewDeps = {
   };
   courses: {
     findAll: () => Promise<Course[]>;
-  };
-  progress: {
-    findAllByCourse: (courseId: string) => Promise<ConceptProgress[]>;
+    findDetailById: (id: string) => Promise<CourseDetail | null>;
   };
   sessions: {
     findAll: () => Promise<StudySession[]>;
@@ -35,34 +34,26 @@ function emptyStatistics(): ProfileViewStatistics {
     masteredConceptCount: 0,
     progressingConceptCount: 0,
     needsWorkConceptCount: 0,
+    notStartedConceptCount: 0,
   };
 }
 
 function buildStatistics(input: {
   courses: Course[];
-  progressRows: ConceptProgress[];
+  details: CourseDetail[];
   sessions: StudySession[];
 }): ProfileViewStatistics {
   const activeCourses = input.courses.filter((course) => course.status !== "archived");
   const statistics = emptyStatistics();
+  const activeCourseIds = new Set(activeCourses.map((course) => course.id));
+  const summary = buildCourseProgressSummary(input.details.flatMap((detail) => detail.concepts));
   statistics.courseCount = activeCourses.length;
-  statistics.completedSessionCount = input.sessions.filter((session) => session.status === "completed").length;
-
-  if (input.progressRows.length > 0) {
-    statistics.averageProgress = clampProgress(
-      input.progressRows.reduce((sum, row) => sum + row.score, 0) / input.progressRows.length,
-    );
-  }
-
-  for (const row of input.progressRows) {
-    if (row.status === "mastered") {
-      statistics.masteredConceptCount += 1;
-    } else if (row.status === "in_progress") {
-      statistics.progressingConceptCount += 1;
-    } else if (row.status === "needs_reinforcement") {
-      statistics.needsWorkConceptCount += 1;
-    }
-  }
+  statistics.completedSessionCount = input.sessions.filter((session) => session.status === "completed" && activeCourseIds.has(session.courseId)).length;
+  statistics.averageProgress = clampProgress(summary.progress);
+  statistics.masteredConceptCount = summary.mastered;
+  statistics.progressingConceptCount = summary.progressing;
+  statistics.needsWorkConceptCount = summary.needsWork;
+  statistics.notStartedConceptCount = summary.notStarted;
 
   return statistics;
 }
@@ -90,10 +81,10 @@ export function createProfileViewService(dependencies: ProfileViewDeps) {
         dependencies.sessions.findAll(),
       ]);
       const activeCourses = courses.filter((course) => course.status !== "archived");
-      const progressRows = (
-        await Promise.all(activeCourses.map((course) => dependencies.progress.findAllByCourse(course.id)))
-      ).flat();
-      return toViewData(profile, buildStatistics({ courses, progressRows, sessions }));
+      const details = (
+        await Promise.all(activeCourses.map((course) => dependencies.courses.findDetailById(course.id)))
+      ).filter((detail): detail is CourseDetail => detail !== null);
+      return toViewData(profile, buildStatistics({ courses, details, sessions }));
     },
     updateProfileFromForm: async (form: OnboardingProfileForm) => {
       const validation = validateOnboardingProfileForm(form);
@@ -107,23 +98,21 @@ export function createProfileViewService(dependencies: ProfileViewDeps) {
 }
 
 export async function loadProfileView() {
-  const { coursesRepository, progressRepository, studySessionsRepository } = await import("@/src/db");
+  const { coursesRepository, studySessionsRepository } = await import("@/src/db");
   const { getProfile, updateProfile } = await import("./profile.service");
   return createProfileViewService({
     profile: { getProfile, updateProfile },
     courses: coursesRepository,
-    progress: progressRepository,
     sessions: studySessionsRepository,
   }).loadProfileView();
 }
 
 export async function updateProfileFromForm(form: OnboardingProfileForm) {
-  const { coursesRepository, progressRepository, studySessionsRepository } = await import("@/src/db");
+  const { coursesRepository, studySessionsRepository } = await import("@/src/db");
   const { getProfile, updateProfile } = await import("./profile.service");
   return createProfileViewService({
     profile: { getProfile, updateProfile },
     courses: coursesRepository,
-    progress: progressRepository,
     sessions: studySessionsRepository,
   }).updateProfileFromForm(form);
 }

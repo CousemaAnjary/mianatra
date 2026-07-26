@@ -64,9 +64,11 @@ export type DemoRevisionSheet = {
 };
 
 export type DemoResultCounters = {
+  totalConcepts: number;
   mastered: number;
   progressing: number;
   needsWork: number;
+  notStarted: number;
 };
 
 export type DemoRecentActivity = {
@@ -311,9 +313,11 @@ export const demoRevisionSheet: DemoRevisionSheet = {
 export const demoCourseResults: DemoCourseResults = {
   courseId: demoCourse.id,
   counters: {
+    totalConcepts: 7,
     mastered: 2,
     progressing: 3,
     needsWork: 2,
+    notStarted: 0,
   },
   progress: 62,
   recentActivities: [

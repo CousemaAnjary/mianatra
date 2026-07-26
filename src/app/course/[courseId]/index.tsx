@@ -185,6 +185,10 @@ export default function CourseDetailScreen() {
 
   const summaryItems = course.summary ?? [];
   const progressCounters = realResults?.counters ?? (isDemoCourse ? demoCourseResults.counters : emptyCourseResultCounters);
+  const showProcessingCard =
+    realDetail &&
+    (["analyzing", "persisting", "generating_sheet", "generating_exercises", "error"].includes(processing.status) ||
+      Boolean(processing.pendingAnalysis));
 
   function showOptions() {
     Alert.alert(
@@ -232,6 +236,7 @@ export default function CourseDetailScreen() {
         mastered={progressCounters.mastered}
         progressing={progressCounters.progressing}
         needsWork={progressCounters.needsWork}
+        notStarted={progressCounters.notStarted}
       />
 
       <AppCard className="overflow-hidden rounded-2xl p-0">
@@ -269,7 +274,7 @@ export default function CourseDetailScreen() {
         <CourseSummary items={summaryItems} />
       </AppCard>
 
-      {realDetail ? (
+      {showProcessingCard ? (
         <AppCard className="gap-4">
           <View className="gap-2">
             <AppText variant="subtitle">Traitement du cours</AppText>

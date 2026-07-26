@@ -33,6 +33,7 @@ type StudySessionServiceDeps = {
   attempts: {
     create: (input: CreateAttemptInput) => Promise<ExerciseAttempt>;
     findAllByExercise: (exerciseId: string) => Promise<ExerciseAttempt[]>;
+    findAllByConcept: (conceptId: string) => Promise<ExerciseAttempt[]>;
     findAllBySession: (sessionId: string) => Promise<ExerciseAttempt[]>;
     submitWithProgress: (input: SubmitAttemptWithProgressInput) => Promise<{ attempt: ExerciseAttempt }>;
   };
@@ -125,7 +126,7 @@ export function createStudySessionService(deps: StudySessionServiceDeps) {
       if (!validation.normalizedAnswer) {
         throw new InvalidAnswerError();
       }
-      const existingAttempts = await deps.attempts.findAllByExercise(exercise.id);
+      const existingAttempts = await deps.attempts.findAllByConcept(exercise.conceptId);
       const attemptsCount = existingAttempts.length + 1;
       const correctCount = existingAttempts.filter((row) => row.isCorrect).length + (validation.isCorrect ? 1 : 0);
       const usedHintCount = existingAttempts.filter((row) => row.usedHint).length + (input.usedHint ? 1 : 0);

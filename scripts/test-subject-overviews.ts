@@ -113,9 +113,10 @@ async function main() {
   const math = overviews.find((item) => item.id === "subject-math");
   assert.ok(math, "matière avec plusieurs chapitres présente");
   assert.equal(math.chapterCount, 2, "chapterCount agrège plusieurs cours");
-  assert.equal(math.progress, 30, "progression matière moyenne les progressions des chapitres");
+  assert.equal(math.progress, 60, "progression matière agrège toutes les notions actives");
   assert.equal(math.masteredCount, 1, "notions maîtrisées agrégées");
   assert.equal(math.needsWorkCount, 1, "notions à renforcer agrégées");
+  assert.equal(math.notStartedCount, 0, "notions non commencées agrégées");
   assert.equal(math.mainWeakness, "Probabilité", "principale notion à renforcer détectée");
   assert.equal(math.lastReviewedAt, "2026-07-26T11:00:00.000Z", "dernière révision la plus récente");
   assert.deepEqual(math.grades, ["1ère", "2nde"], "classes agrégées par matière");

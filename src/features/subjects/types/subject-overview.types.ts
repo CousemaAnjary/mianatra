@@ -10,6 +10,7 @@ export type SubjectOverviewItem = {
   masteredCount: number;
   progressingCount: number;
   needsWorkCount: number;
+  notStartedCount: number;
   mainWeakness: string | null;
   lastReviewedAt: string | null;
   updatedAt: string;

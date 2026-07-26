@@ -20,7 +20,7 @@ import {
   normalizeAnswer,
   validateExerciseAnswer,
 } from "../src/features/exercises";
-import { calculateConceptScore, calculateCourseProgressValue, createProgressService, determineConceptStatus } from "../src/features/progress";
+import { buildCourseProgressSummary, calculateConceptScore, calculateCourseProgressValue, createProgressService, determineConceptStatus } from "../src/features/progress";
 import { createStudySessionService } from "../src/features/study-session";
 import { createReportService } from "../src/features/reports";
 import { buildRecommendations, createRecommendationService, rankRecommendations } from "../src/features/recommendations";
@@ -173,11 +173,37 @@ assert.equal(determineConceptStatus(3, 90), "mastered", "statut mastered");
 assert.equal(determineConceptStatus(2, 50), "in_progress", "statut seuil 50");
 assert.equal(determineConceptStatus(3, 85), "mastered", "statut seuil 85");
 assert.equal(calculateCourseProgressValue([{ score: 50 } as ConceptProgress, { score: 100 } as ConceptProgress]), 75, "progression cours 0-100");
+assert.equal(buildCourseProgressSummary([]).progress, 0, "aucune notion -> progression 0");
+assert.equal(
+  buildCourseProgressSummary([
+    { ...makeConcept({ id: "c1" }), progress: null },
+    { ...makeConcept({ id: "c2" }), progress: null },
+    { ...makeConcept({ id: "c3" }), progress: null },
+    { ...makeConcept({ id: "c4" }), progress: null },
+    { ...makeConcept({ id: "c5" }), progress: null },
+  ]).progress,
+  0,
+  "5 notions sans progression -> 0",
+);
+assert.equal(
+  buildCourseProgressSummary([
+    { ...makeConcept({ id: "c1" }), progress: { score: 100, status: "mastered", attemptsCount: 2, lastPracticedAt: now, updatedAt: now } },
+    { ...makeConcept({ id: "c2" }), progress: null },
+    { ...makeConcept({ id: "c3" }), progress: null },
+    { ...makeConcept({ id: "c4" }), progress: null },
+    { ...makeConcept({ id: "c5" }), progress: null },
+  ]).progress,
+  20,
+  "1 notion à 100 et 4 sans progression -> 20",
+);
 
 const attempts: ExerciseAttempt[] = [];
 const savedProgressRows: ConceptProgress[] = [];
 const progressService = createProgressService({
-  attempts: { findAllByExercise: async () => attempts } as Parameters<typeof createProgressService>[0]["attempts"],
+  attempts: {
+    findAllByExercise: async () => attempts,
+    findAllByConcept: async () => attempts,
+  } as Parameters<typeof createProgressService>[0]["attempts"],
   concepts: { findAllByCourse: async () => [makeConcept(), makeConcept({ id: "concept-2", name: "Limites" })] } as Parameters<typeof createProgressService>[0]["concepts"],
   exercises: { findById: async () => makeExercise() } as Parameters<typeof createProgressService>[0]["exercises"],
   progress: {
@@ -225,6 +251,11 @@ const sessionService = createStudySessionService({
       throw new Error("submitAnswer must use submitWithProgress");
     },
     findAllByExercise: async (exerciseId) => attempts.filter((attempt) => attempt.exerciseId === exerciseId),
+    findAllByConcept: async (conceptId) => {
+      const sessionExercises = [makeExercise({ conceptId })];
+      const exerciseIds = new Set(sessionExercises.map((exercise) => exercise.id));
+      return attempts.filter((attempt) => exerciseIds.has(attempt.exerciseId));
+    },
     findAllBySession: async (sessionId) => attempts.filter((attempt) => attempt.sessionId === sessionId),
     submitWithProgress: async (input) => {
       const attempt = {

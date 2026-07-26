@@ -6,6 +6,7 @@ import {
   isExplicitDemoId,
   resolveExerciseSessionTarget,
 } from "@/src/features/courses";
+import { buildCourseProgressSummary } from "@/src/features/progress";
 
 const now = "2026-07-26T00:00:00.000Z";
 
@@ -56,9 +57,28 @@ function detail(input: Partial<CourseDetail> = {}): CourseDetail {
 
 function main() {
   const realWithoutProgress = buildRealCourseResults(detail());
-  assert.deepEqual(realWithoutProgress.counters, { mastered: 0, progressing: 0, needsWork: 0 }, "vrai cours sans progression: compteurs zéro");
+  assert.deepEqual(realWithoutProgress.counters, { totalConcepts: 1, mastered: 0, progressing: 0, needsWork: 0, notStarted: 1 }, "vrai cours sans progression: compteurs réels sans démo");
   assert.equal(realWithoutProgress.progress, 0, "vrai cours sans progression: progression zéro");
   assert.notDeepEqual(realWithoutProgress.counters, demoCourseResults.counters, "vrai cours ne retourne jamais demoCourseResults");
+
+  const mixedSummary = buildCourseProgressSummary([
+    { ...concept({ id: "c1" }), progress: { score: 100, status: "mastered", attemptsCount: 2, lastPracticedAt: now, updatedAt: now } },
+    { ...concept({ id: "c2" }), progress: { score: 50, status: "in_progress", attemptsCount: 2, lastPracticedAt: now, updatedAt: now } },
+    { ...concept({ id: "c3" }), progress: { score: 0, status: "to_discover", attemptsCount: 1, lastPracticedAt: now, updatedAt: now } },
+    { ...concept({ id: "c4" }), progress: null },
+  ]);
+  assert.equal(mixedSummary.progress, 38, "scores 100, 50, 0, null -> 38");
+  assert.deepEqual(
+    {
+      totalConcepts: mixedSummary.totalConcepts,
+      mastered: mixedSummary.mastered,
+      progressing: mixedSummary.progressing,
+      needsWork: mixedSummary.needsWork,
+      notStarted: mixedSummary.notStarted,
+    },
+    { totalConcepts: 4, mastered: 1, progressing: 2, needsWork: 0, notStarted: 1 },
+    "statuts canoniques agrégés",
+  );
 
   assert.equal(
     resolveExerciseSessionTarget({ isDemoCourse: false, demoSessionId: demoSession.id, realSessionId: null }),

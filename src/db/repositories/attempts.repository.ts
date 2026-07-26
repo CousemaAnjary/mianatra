@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "../client";
 import { createId, nowIso } from "../helpers";
-import { conceptProgress, exerciseAttempts, studySessions } from "../schema";
+import { conceptProgress, exerciseAttempts, exercises, studySessions } from "../schema";
 import type { ConceptProgress, ExerciseAttempt, NewExerciseAttempt, StudySession } from "../types";
 import { assertInteger, assertNonEmpty, assertNonNegative, firstOrThrow } from "./repository-utils";
 import { type UpsertConceptProgressInput, validateProgressInput } from "./progress.repository";
@@ -67,13 +67,14 @@ async function submitWithProgress(input: SubmitAttemptWithProgressInput): Promis
       tx.insert(exerciseAttempts).values({ id: createId(), createdAt: now, ...input.attempt }).returning().all(),
       "Unable to create exercise attempt.",
     );
+    const progressInput = { ...input.progress.input, lastPracticedAt: attempt.createdAt };
     const existingProgress =
       tx.select().from(conceptProgress).where(eq(conceptProgress.conceptId, input.progress.conceptId)).get() ?? null;
     const progress = existingProgress
       ? firstOrThrow(
           tx
             .update(conceptProgress)
-            .set({ ...input.progress.input, updatedAt: now })
+            .set({ ...progressInput, updatedAt: now })
             .where(eq(conceptProgress.conceptId, input.progress.conceptId))
             .returning()
             .all(),
@@ -82,7 +83,7 @@ async function submitWithProgress(input: SubmitAttemptWithProgressInput): Promis
       : firstOrThrow(
           tx
             .insert(conceptProgress)
-            .values({ conceptId: input.progress.conceptId, updatedAt: now, ...input.progress.input })
+            .values({ conceptId: input.progress.conceptId, updatedAt: now, ...progressInput })
             .returning()
             .all(),
           "Unable to create concept progress.",
@@ -111,9 +112,30 @@ async function findAllByExercise(exerciseId: string): Promise<ExerciseAttempt[]>
   return db.select().from(exerciseAttempts).where(eq(exerciseAttempts.exerciseId, exerciseId)).orderBy(desc(exerciseAttempts.createdAt)).all();
 }
 
+async function findAllByConcept(conceptId: string): Promise<ExerciseAttempt[]> {
+  return db
+    .select({
+      id: exerciseAttempts.id,
+      sessionId: exerciseAttempts.sessionId,
+      exerciseId: exerciseAttempts.exerciseId,
+      userAnswer: exerciseAttempts.userAnswer,
+      isCorrect: exerciseAttempts.isCorrect,
+      usedHint: exerciseAttempts.usedHint,
+      mistakeType: exerciseAttempts.mistakeType,
+      responseTimeMs: exerciseAttempts.responseTimeMs,
+      createdAt: exerciseAttempts.createdAt,
+    })
+    .from(exerciseAttempts)
+    .innerJoin(exercises, eq(exerciseAttempts.exerciseId, exercises.id))
+    .where(eq(exercises.conceptId, conceptId))
+    .orderBy(desc(exerciseAttempts.createdAt))
+    .all();
+}
+
 export const attemptsRepository = {
   create,
   submitWithProgress,
   findAllBySession,
   findAllByExercise,
+  findAllByConcept,
 };

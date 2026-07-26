@@ -48,6 +48,7 @@ function subjectItem(input: Partial<SubjectOverviewItem> = {}): SubjectOverviewI
     masteredCount: 0,
     progressingCount: 0,
     needsWorkCount: 0,
+    notStartedCount: 0,
     mainWeakness: null,
     lastReviewedAt: null,
     updatedAt: now,

@@ -8,6 +8,7 @@ type CourseProgressCardProps = {
   mastered: number;
   progressing: number;
   needsWork: number;
+  notStarted?: number;
 };
 
 export function CourseProgressCard({
@@ -15,6 +16,7 @@ export function CourseProgressCard({
   mastered,
   progressing,
   needsWork,
+  notStarted = 0,
 }: CourseProgressCardProps) {
   return (
     <AppCard
@@ -31,11 +33,19 @@ export function CourseProgressCard({
         Progression du chapitre
       </AppText>
       <View className="flex-row items-center gap-4">
-        <CourseProgressRing value={progress} size={92} />
+        <CourseProgressRing
+          value={progress}
+          mastered={mastered}
+          progressing={progressing}
+          needsWork={needsWork}
+          notStarted={notStarted}
+          size={92}
+        />
         <View className="flex-1 gap-2.5">
           <LegendRow color={colors.secondary} label="Maîtrisé" value={`${mastered} notions`} />
           <LegendRow color={colors.accent} label="En progression" value={`${progressing} notions`} />
           <LegendRow color={colors.primary} label="À renforcer" value={`${needsWork} notions`} />
+          {notStarted > 0 ? <LegendRow color={colors.surfaceSoft} label="Non commencé" value={`${notStarted} notions`} /> : null}
         </View>
       </View>
     </AppCard>

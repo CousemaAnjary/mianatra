@@ -39,6 +39,7 @@ function toCourseListItem(detail: CourseDetail): CourseListItem | null {
     masteredCount: results.counters.mastered,
     progressingCount: results.counters.progressing,
     needsWorkCount: results.counters.needsWork,
+    notStartedCount: results.counters.notStarted,
     status: detail.course.status,
     lastReviewedAt: detail.course.lastReviewedAt,
     updatedAt: detail.course.updatedAt,

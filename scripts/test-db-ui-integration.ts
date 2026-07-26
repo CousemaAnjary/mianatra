@@ -180,8 +180,7 @@ async function main() {
 
   const emptyProfileStats = await createProfileViewService({
     profile: { getProfile: async () => storedProfile, updateProfile: async (input) => ({ ...storedProfile, ...input }) },
-    courses: { findAll: async () => [] },
-    progress: { findAllByCourse: async () => [] },
+    courses: { findAll: async () => [], findDetailById: async () => null },
     sessions: { findAll: async () => [] },
   }).loadProfileView();
   assert.equal(emptyProfileStats.statistics.courseCount, 0, "aucune activité -> compteurs à zéro");
@@ -189,15 +188,20 @@ async function main() {
 
   const completedStats = await createProfileViewService({
     profile: { getProfile: async () => storedProfile, updateProfile: async (input) => ({ ...storedProfile, ...input }) },
-    courses: { findAll: async () => [course({ id: "new-course" })] },
-    progress: { findAllByCourse: async () => [progress({ score: 120 }), progress({ status: "needs_reinforcement", score: -20 })] },
-    sessions: { findAll: async () => [session({ status: "completed", completedAt: now }), session({ status: "active" })] },
+    courses: {
+      findAll: async () => [course({ id: "new-course" })],
+      findDetailById: async () => detail({
+        sourceCourse: course({ id: "new-course" }),
+        progressRows: [progress({ score: 100 }), progress({ status: "needs_reinforcement", score: 0 })],
+      }),
+    },
+    sessions: { findAll: async () => [session({ courseId: "new-course", status: "completed", completedAt: now }), session({ courseId: "new-course", status: "active" })] },
   }).loadProfileView();
   assert.equal(completedStats.statistics.completedSessionCount, 1, "fin de session mise à jour dans le profil");
   assert.equal(completedStats.statistics.averageProgress >= 0 && completedStats.statistics.averageProgress <= 100, true, "progression bornée 0-100");
 
   const realWithoutProgress = buildRealCourseResults(detail());
-  assert.deepEqual(realWithoutProgress.counters, { mastered: 0, progressing: 0, needsWork: 0 }, "ID réel -> état vide réel sans démo");
+  assert.deepEqual(realWithoutProgress.counters, { totalConcepts: 0, mastered: 0, progressing: 0, needsWork: 0, notStarted: 0 }, "ID réel -> état vide réel sans démo");
   assert.equal(resolveExerciseSessionTarget({ isDemoCourse: false, demoSessionId: "demo-session", realSessionId: null }), null, "ID réel sans session -> aucun fallback demoSession");
   assert.equal(isExplicitDemoId(demoCourses[0].id, demoCourses.map((item) => item.id)), true, "ID démo explicite -> démo encore fonctionnelle");
   assert.equal(isExplicitDemoId("sqlite-course-1", demoCourses.map((item) => item.id)), false, "ID réel -> aucune donnée démo");

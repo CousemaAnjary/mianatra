@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import type { ConceptProgress, Course, StudySession, UserProfile } from "../src/db";
+import type { ConceptProgress, Course, CourseDetail, StudySession, Subject, UserProfile } from "../src/db";
 import type { ProfileInput } from "../src/features/profile";
 import { createProfileViewService } from "../src/features/profile/services/profile-view.service";
 
@@ -37,6 +37,10 @@ function course(input: Partial<Course> = {}): Course {
   };
 }
 
+function subject(): Subject {
+  return { id: "subject-1", name: "Mathématiques", icon: "book-open", color: "#D94B24", isDefault: true, createdAt: now };
+}
+
 function progress(input: Partial<ConceptProgress> = {}): ConceptProgress {
   return {
     conceptId: "concept-1",
@@ -49,6 +53,26 @@ function progress(input: Partial<ConceptProgress> = {}): ConceptProgress {
     ...input,
   };
 }
+
+function detail(sourceCourse: Course, progressRows: ConceptProgress[] = []): CourseDetail {
+  return {
+    course: sourceCourse,
+    subject: subject(),
+    pages: [],
+    concepts: progressRows.map((row, index) => ({
+      id: row.conceptId,
+      courseId: sourceCourse.id,
+      name: `Notion ${index + 1}`,
+      description: null,
+      orderIndex: index,
+      createdAt: now,
+      progress: row,
+    })),
+    latestAnalysis: null,
+    latestRevisionSheet: null,
+  };
+}
+
 
 function session(input: Partial<StudySession> = {}): StudySession {
   return {
@@ -103,9 +127,10 @@ function harness(input: {
       },
       courses: {
         findAll: async () => courses,
-      },
-      progress: {
-        findAllByCourse: async (courseId) => progressByCourse[courseId] ?? [],
+        findDetailById: async (courseId: string) => {
+          const found = courses.find((row) => row.id === courseId);
+          return found ? detail(found, progressByCourse[courseId] ?? []) : null;
+        },
       },
       sessions: {
         findAll: async () => sessions,

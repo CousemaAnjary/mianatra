@@ -102,6 +102,10 @@ function createHarness() {
         throw new Error("unused");
       },
       findAllByExercise: async (exerciseId) => attempts.filter((attempt) => attempt.exerciseId === exerciseId),
+      findAllByConcept: async (conceptId) => {
+        const conceptExerciseIds = new Set(exercises.filter((exercise) => exercise.conceptId === conceptId).map((exercise) => exercise.id));
+        return attempts.filter((attempt) => conceptExerciseIds.has(attempt.exerciseId));
+      },
       findAllBySession: async (sessionId) => attempts.filter((attempt) => attempt.sessionId === sessionId),
       submitWithProgress: async (input) => {
         if (failProgress) {

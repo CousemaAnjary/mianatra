@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppButton, AppCard, AppScreen, AppText, ProgressBar } from "@/src/components/shared";
 import { CourseProgressRing, CourseTopBar } from "@/src/features/courses/components";
-import { RecentActivityList } from "@/src/features/progress/components";
+import { CourseResultSummary, RecentActivityList } from "@/src/features/progress/components";
 import { isExplicitDemoId, loadRealCourseResults, type RealCourseResultsState } from "@/src/features/courses";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
 import { fonts } from "@/src/theme";
@@ -103,6 +103,8 @@ export default function CourseResultsScreen() {
         </AppText>
       </View>
 
+      <CourseResultSummary counters={results.counters} />
+
       <AppCard
         className="gap-4 rounded-2xl bg-[#FFFDF8] px-4 py-4"
         style={{
@@ -117,7 +119,14 @@ export default function CourseResultsScreen() {
           Progression du chapitre
         </AppText>
         <View className="flex-row items-center gap-4">
-          <CourseProgressRing value={results.progress} size={82} />
+          <CourseProgressRing
+            value={results.progress}
+            mastered={results.counters.mastered}
+            progressing={results.counters.progressing}
+            needsWork={results.counters.needsWork}
+            notStarted={results.counters.notStarted}
+            size={82}
+          />
           <View className="flex-1 gap-2.5">
             <ProgressBar
               value={results.progress}
@@ -126,6 +135,11 @@ export default function CourseResultsScreen() {
             <AppText tone="secondary" className="text-[14px] leading-5">
               {isDemoCourse ? `${results.progress} % de progression de démonstration.` : `${results.progress} % de progression.`}
             </AppText>
+            {results.counters.notStarted > 0 ? (
+              <AppText tone="secondary" className="text-[12px] leading-4">
+                {results.counters.notStarted} notion{results.counters.notStarted > 1 ? "s" : ""} à découvrir.
+              </AppText>
+            ) : null}
           </View>
         </View>
       </AppCard>

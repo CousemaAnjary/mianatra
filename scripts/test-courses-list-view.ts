@@ -106,13 +106,14 @@ async function main() {
   assert.equal(items[0].masteredCount, 1, "compteur maîtrisé réel");
   assert.equal(items[0].progressingCount, 1, "compteur en progression réel");
   assert.equal(items[0].needsWorkCount, 1, "compteur à renforcer réel");
+  assert.equal(items[0].notStartedCount, 0, "compteur non commencé réel");
   assert.equal(items[0].lastReviewedAt, null, "dernière révision conservée");
   assert.equal(items[0].progress, 57, "progression réelle moyenne arrondie");
   assert.equal(items[1].subject, "Matière inconnue", "fallback matière absent");
   assert.equal(items[1].iconName, "book-open", "fallback icône matière absent");
   assert.equal(items[1].subjectColor, null, "fallback couleur matière absent");
   assert.equal(items[1].progress, 0, "progression zéro sans progression");
-  assert.equal(items[1].masteredCount + items[1].progressingCount + items[1].needsWorkCount, 0, "compteurs zéro sans progression");
+  assert.equal(items[1].masteredCount + items[1].progressingCount + items[1].needsWorkCount, 0, "compteurs maîtrisé/progression/renfort zéro sans progression");
   assert.deepEqual(buildCourseGradeFilters(items), ["Tous", "1ère", "2nde"], "filtres issus des vraies classes");
   assert.deepEqual(buildCourseGradeFilters([]), ["Tous"], "filtre Tous seul sans cours");
   assert.equal(items.some((item) => item.id.startsWith("demo-")), false, "aucune donnée de démonstration");

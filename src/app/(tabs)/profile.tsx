@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingForm } from "@/src/components/core";
@@ -12,6 +11,7 @@ import {
   ScreenHeader,
 } from "@/src/components/shared";
 import { AISettingsCard } from "@/src/features/ai-settings";
+import { CourseProgressRing } from "@/src/features/courses/components";
 import { onboardingGrades, type OnboardingProfileForm } from "@/src/features/profile";
 import { useProfileView } from "@/src/features/profile/hooks/use-profile-view";
 import { colors, fonts } from "@/src/theme";
@@ -206,33 +206,21 @@ export default function ProfileScreen() {
           </AppText>
         </View>
         <View className="flex-row items-center gap-4">
-          <View className="h-[96px] w-[96px] items-center justify-center">
-            <Svg width={96} height={96} viewBox="0 0 96 96" accessibilityLabel={`Progression globale ${progress} pour cent`}>
-              <Circle cx="48" cy="48" r="37" stroke="#F8EFE0" strokeWidth="9" fill="none" />
-              <Circle
-                cx="48"
-                cy="48"
-                r="37"
-                stroke={colors.secondary}
-                strokeWidth="9"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 37}`}
-                strokeDashoffset={`${2 * Math.PI * 37 * (1 - progress / 100)}`}
-                strokeLinecap="round"
-                rotation="-90"
-                origin="48, 48"
-              />
-            </Svg>
-            <View className="absolute">
-              <AppText className="text-[20px] leading-6 text-[#2F241F]" style={{ fontFamily: fonts.bold }}>
-                {progress}%
-              </AppText>
-            </View>
-          </View>
+          <CourseProgressRing
+            value={progress}
+            mastered={profile.statistics.masteredConceptCount}
+            progressing={profile.statistics.progressingConceptCount}
+            needsWork={profile.statistics.needsWorkConceptCount}
+            notStarted={profile.statistics.notStartedConceptCount}
+            size={96}
+          />
           <View className="flex-1 gap-2.5">
             <LegendRow color={colors.secondary} label="Maîtrisé" value={`${profile.statistics.masteredConceptCount} notions`} />
             <LegendRow color={colors.accent} label="En progression" value={`${profile.statistics.progressingConceptCount} notions`} />
             <LegendRow color={colors.primary} label="À renforcer" value={`${profile.statistics.needsWorkConceptCount} notions`} />
+            {profile.statistics.notStartedConceptCount > 0 ? (
+              <LegendRow color={colors.surfaceSoft} label="Non commencé" value={`${profile.statistics.notStartedConceptCount} notions`} />
+            ) : null}
           </View>
         </View>
         <View className="flex-row gap-3">

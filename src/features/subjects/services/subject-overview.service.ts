@@ -1,6 +1,7 @@
 import type { Course, CourseDetail, Subject } from "@/src/db";
 import type { CourseListItem } from "@/src/features/courses";
 import { buildRealCourseResults } from "@/src/features/courses/services/course-route-state.service";
+import { buildCourseProgressSummary } from "@/src/features/progress/domain";
 import type { SubjectDetailView, SubjectOverviewItem } from "../types/subject-overview.types";
 
 type SubjectOverviewDeps = {
@@ -32,7 +33,10 @@ function uniqueSortedGrades(courses: readonly Course[]) {
 }
 
 function clampProgress(value: number) {
-  return Math.max(0, Math.min(100, value));
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 function mainWeakness(details: readonly CourseDetail[]) {
@@ -65,6 +69,7 @@ function toCourseListItem(detail: CourseDetail): CourseListItem {
     masteredCount: results.counters.mastered,
     progressingCount: results.counters.progressing,
     needsWorkCount: results.counters.needsWork,
+    notStartedCount: results.counters.notStarted,
     status: detail.course.status as CourseListItem["status"],
     lastReviewedAt: detail.course.lastReviewedAt,
     updatedAt: detail.course.updatedAt,
@@ -72,15 +77,7 @@ function toCourseListItem(detail: CourseDetail): CourseListItem {
 }
 
 function buildSubjectOverview(subject: Subject, courses: readonly Course[], details: readonly CourseDetail[]): SubjectOverviewItem {
-  const courseResults = details.map((detail) => buildRealCourseResults(detail));
-  const masteredCount = courseResults.reduce((sum, result) => sum + result.counters.mastered, 0);
-  const progressingCount = courseResults.reduce((sum, result) => sum + result.counters.progressing, 0);
-  const needsWorkCount = courseResults.reduce((sum, result) => sum + result.counters.needsWork, 0);
-  // La progression matière est la moyenne simple des progressions de ses chapitres actifs.
-  const progress =
-    courseResults.length > 0
-      ? clampProgress(Math.round(courseResults.reduce((sum, result) => sum + result.progress, 0) / courseResults.length))
-      : 0;
+  const summary = buildCourseProgressSummary(details.flatMap((detail) => detail.concepts));
 
   return {
     id: subject.id,
@@ -88,10 +85,11 @@ function buildSubjectOverview(subject: Subject, courses: readonly Course[], deta
     color: normalizedColor(subject),
     iconName: normalizedIcon(subject),
     chapterCount: courses.length,
-    progress,
-    masteredCount,
-    progressingCount,
-    needsWorkCount,
+    progress: clampProgress(summary.progress),
+    masteredCount: summary.mastered,
+    progressingCount: summary.progressing,
+    needsWorkCount: summary.needsWork,
+    notStartedCount: summary.notStarted,
     mainWeakness: mainWeakness(details),
     lastReviewedAt: latestDate(courses.map((course) => course.lastReviewedAt)),
     updatedAt: latestDate(courses.map((course) => course.updatedAt)) ?? subject.createdAt,

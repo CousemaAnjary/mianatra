@@ -10,6 +10,7 @@ export type CourseListItem = {
   masteredCount: number;
   progressingCount: number;
   needsWorkCount: number;
+  notStartedCount: number;
   status: "draft" | "processing" | "ready";
   lastReviewedAt: string | null;
   updatedAt: string;
