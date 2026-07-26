@@ -10,7 +10,7 @@ import {
   shouldRedirectExistingOnboardingProfile,
   type OnboardingProfileValidationErrors,
 } from "@/src/features/profile/services/onboarding-profile.service";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
@@ -117,10 +117,14 @@ export default function OnboardingScreen() {
             />
 
             <View className="items-center gap-1 pt-3">
-              <AppText variant="title" className="text-center text-[44px] leading-[49px] text-[#D94B24]">
+              <AppText
+                variant="title"
+                className="text-center text-[48px] leading-[52px] text-[#9E321F]"
+                style={{ fontFamily: fonts.brand }}
+              >
                 Mianatra
               </AppText>
-              <AppText tone="secondary" className="max-w-[286px] pt-4 text-center text-[15px] leading-[22px]">
+              <AppText tone="secondary" className="max-w-[286px] pt-1 text-center text-[15px] leading-[22px]">
                 {"Faisons connaissance pour mieux t'accompagner."}
               </AppText>
             </View>

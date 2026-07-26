@@ -1,7 +1,7 @@
 import { ActivityIndicator } from "react-native";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Button, ButtonText } from "@/src/components/ui/button";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 
 type AppButtonVariant = "primary" | "secondary" | "tertiary";
 type ButtonIconName = React.ComponentProps<typeof FontAwesome5>["name"];
@@ -63,7 +63,10 @@ export function AppButton({
       ) : (
         <>
           {iconPosition === "left" ? icon : null}
-          <ButtonText className={["text-base font-bold leading-5 tracking-normal", textClassName].join(" ")}>
+          <ButtonText
+            className={["text-base font-bold leading-5 tracking-normal", textClassName].join(" ")}
+            style={{ fontFamily: fonts.bold }}
+          >
             {title}
           </ButtonText>
           {iconPosition === "right" ? icon : null}

@@ -9,7 +9,7 @@ import {
   FormControlLabelText,
 } from "@/src/components/ui/form-control";
 import { Input, InputField, InputSlot } from "@/src/components/ui/input";
-import { colors } from "@/src/theme";
+import { colors, fonts } from "@/src/theme";
 import { ClassSelector } from "./ClassSelector";
 
 type OnboardingFormProps = {
@@ -48,10 +48,13 @@ export function OnboardingForm({
   showOptionalDetails = true,
 }: OnboardingFormProps) {
   return (
-    <View className="gap-3">
+    <View className="gap-3.5">
       <FormControl isInvalid={Boolean(nameError)} className="gap-2">
         <FormControlLabel>
-          <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+          <FormControlLabelText
+            className="text-[15px] leading-5 text-[#2F241F]"
+            style={{ fontFamily: fonts.bold }}
+          >
             {"Comment veux-tu qu'on t'appelle ?"}
           </FormControlLabelText>
         </FormControlLabel>
@@ -71,14 +74,18 @@ export function OnboardingForm({
             value={displayName}
             onChangeText={onChangeDisplayName}
             placeholder="Ton prénom"
-            placeholderTextColor={colors.textMuted}
-            className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+            placeholderTextColor="#8D8077"
+            className="px-0 text-[16px] leading-5 text-[#2F241F]"
+            style={{ fontFamily: fonts.medium }}
             returnKeyType="next"
           />
         </Input>
         {nameError ? (
           <FormControlError>
-            <FormControlErrorText className="text-xs font-semibold text-[#B53434]">
+            <FormControlErrorText
+              className="text-xs text-[#B53434]"
+              style={{ fontFamily: fonts.semibold }}
+            >
               {nameError}
             </FormControlErrorText>
           </FormControlError>
@@ -87,7 +94,10 @@ export function OnboardingForm({
 
       <FormControl isInvalid={Boolean(ageError)} className="gap-2">
         <FormControlLabel>
-          <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+          <FormControlLabelText
+            className="text-[15px] leading-5 text-[#2F241F]"
+            style={{ fontFamily: fonts.bold }}
+          >
             Quel âge as-tu ?
           </FormControlLabelText>
         </FormControlLabel>
@@ -107,17 +117,23 @@ export function OnboardingForm({
             value={age}
             onChangeText={(value) => onChangeAge(value.replace(/[^0-9]/g, ""))}
             placeholder="17"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor="#8D8077"
             keyboardType="number-pad"
-            className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+            className="px-0 text-[16px] leading-5 text-[#2F241F]"
+            style={{ fontFamily: fonts.medium }}
           />
           <InputSlot className="pl-2">
-            <AppText tone="secondary">ans</AppText>
+            <AppText tone="secondary" className="text-[16px] leading-5" style={{ fontFamily: fonts.medium }}>
+              ans
+            </AppText>
           </InputSlot>
         </Input>
         {ageError ? (
           <FormControlError>
-            <FormControlErrorText className="text-xs font-semibold text-[#B53434]">
+            <FormControlErrorText
+              className="text-xs text-[#B53434]"
+              style={{ fontFamily: fonts.semibold }}
+            >
               {ageError}
             </FormControlErrorText>
           </FormControlError>
@@ -125,7 +141,7 @@ export function OnboardingForm({
       </FormControl>
 
       <FormControl isInvalid={Boolean(gradeError)} className="gap-2">
-        <AppText variant="label" className="text-[14px] leading-5">Quelle est ta classe ?</AppText>
+        <AppText variant="label" className="text-[15px] leading-5">Quelle est ta classe ?</AppText>
         <ClassSelector
           grades={grades}
           selectedGrade={selectedGrade}
@@ -133,7 +149,10 @@ export function OnboardingForm({
         />
         {gradeError ? (
           <FormControlError>
-            <FormControlErrorText className="text-xs font-semibold text-[#B53434]">
+            <FormControlErrorText
+              className="text-xs text-[#B53434]"
+              style={{ fontFamily: fonts.semibold }}
+            >
               {gradeError}
             </FormControlErrorText>
           </FormControlError>
@@ -144,7 +163,10 @@ export function OnboardingForm({
         <>
           <FormControl className="gap-2">
             <FormControlLabel>
-              <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+              <FormControlLabelText
+                className="text-[15px] leading-5 text-[#2F241F]"
+                style={{ fontFamily: fonts.bold }}
+              >
                 Série
               </FormControlLabelText>
             </FormControlLabel>
@@ -157,15 +179,19 @@ export function OnboardingForm({
                 value={series}
                 onChangeText={onChangeSeries}
                 placeholder="Scientifique, littéraire..."
-                placeholderTextColor={colors.textMuted}
-                className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+                placeholderTextColor="#8D8077"
+                className="px-0 text-[16px] leading-5 text-[#2F241F]"
+                style={{ fontFamily: fonts.medium }}
               />
             </Input>
           </FormControl>
 
           <FormControl className="gap-2">
             <FormControlLabel>
-              <FormControlLabelText className="text-[14px] font-bold leading-5 text-[#2F241F]">
+              <FormControlLabelText
+                className="text-[15px] leading-5 text-[#2F241F]"
+                style={{ fontFamily: fonts.bold }}
+              >
                 Établissement
               </FormControlLabelText>
             </FormControlLabel>
@@ -178,8 +204,9 @@ export function OnboardingForm({
                 value={schoolName}
                 onChangeText={onChangeSchoolName}
                 placeholder="Facultatif"
-                placeholderTextColor={colors.textMuted}
-                className="px-0 text-[15px] font-semibold leading-5 text-[#2F241F]"
+                placeholderTextColor="#8D8077"
+                className="px-0 text-[16px] leading-5 text-[#2F241F]"
+                style={{ fontFamily: fonts.medium }}
               />
             </Input>
           </FormControl>

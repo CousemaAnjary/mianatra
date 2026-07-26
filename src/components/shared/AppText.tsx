@@ -1,5 +1,5 @@
 import { Text, type TextProps } from "react-native";
-import { typography } from "@/src/theme";
+import { fonts, typography } from "@/src/theme";
 
 type AppTextVariant = keyof typeof typography;
 type AppTextTone = "primary" | "secondary" | "muted" | "inverse" | "error";
@@ -31,12 +31,23 @@ export function AppText({
   variant = "body",
   tone = "primary",
   className,
+  style,
   children,
   ...props
 }: AppTextProps) {
+  const fontFamily = {
+    title: fonts.title,
+    heading: fonts.heading,
+    subtitle: fonts.bold,
+    body: fonts.body,
+    caption: fonts.medium,
+    label: fonts.bold,
+  }[variant];
+
   return (
     <Text
       {...props}
+      style={[{ fontFamily }, style]}
       className={["tracking-normal", variantClassName[variant], toneClassName[tone], className]
         .filter(Boolean)
         .join(" ")}
