@@ -9,3 +9,5 @@ export {
   validateOnboardingProfileForm,
 } from "./services/onboarding-profile.service";
 export type { OnboardingGrade, OnboardingProfileForm, OnboardingProfileValidationErrors, OnboardingProfileValidationResult } from "./services/onboarding-profile.service";
+export { createProfileViewService, loadProfileView, updateProfileFromForm } from "./services/profile-view.service";
+export type { ProfileViewData, ProfileViewStatistics } from "./types/profile-view.types";

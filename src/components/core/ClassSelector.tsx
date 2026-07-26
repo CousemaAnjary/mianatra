@@ -1,11 +1,10 @@
 import { Pressable, View } from "react-native";
-import type { DemoGrade } from "@/src/data/demo-data";
 import { AppText } from "@/src/components/shared";
 
 type ClassSelectorProps = {
-  grades: DemoGrade[];
-  selectedGrade: DemoGrade;
-  onSelect: (grade: DemoGrade) => void;
+  grades: string[];
+  selectedGrade: string;
+  onSelect: (grade: string) => void;
 };
 
 export function ClassSelector({ grades, selectedGrade, onSelect }: ClassSelectorProps) {

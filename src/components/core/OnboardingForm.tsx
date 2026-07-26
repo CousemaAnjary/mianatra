@@ -9,32 +9,41 @@ import {
   FormControlLabelText,
 } from "@/src/components/ui/form-control";
 import { Input, InputField, InputSlot } from "@/src/components/ui/input";
-import type { DemoGrade } from "@/src/data/demo-data";
 import { colors } from "@/src/theme";
 import { ClassSelector } from "./ClassSelector";
 
 type OnboardingFormProps = {
-  firstName: string;
+  displayName: string;
   age: string;
-  selectedGrade: DemoGrade;
-  grades: DemoGrade[];
+  selectedGrade: string;
+  grades: string[];
+  series: string;
+  schoolName: string;
   nameError?: string;
   ageError?: string;
-  onChangeFirstName: (value: string) => void;
+  gradeError?: string;
+  onChangeDisplayName: (value: string) => void;
   onChangeAge: (value: string) => void;
-  onSelectGrade: (grade: DemoGrade) => void;
+  onSelectGrade: (grade: string) => void;
+  onChangeSeries: (value: string) => void;
+  onChangeSchoolName: (value: string) => void;
 };
 
 export function OnboardingForm({
-  firstName,
+  displayName,
   age,
   selectedGrade,
   grades,
+  series,
+  schoolName,
   nameError,
   ageError,
-  onChangeFirstName,
+  gradeError,
+  onChangeDisplayName,
   onChangeAge,
   onSelectGrade,
+  onChangeSeries,
+  onChangeSchoolName,
 }: OnboardingFormProps) {
   return (
     <View className="gap-3">
@@ -57,9 +66,9 @@ export function OnboardingForm({
           </InputSlot>
           <InputField
             accessibilityLabel="Prénom ou pseudonyme"
-            value={firstName}
-            onChangeText={onChangeFirstName}
-            placeholder="Fara"
+            value={displayName}
+            onChangeText={onChangeDisplayName}
+            placeholder="Ton prénom"
             placeholderTextColor={colors.textMuted}
             className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
             returnKeyType="next"
@@ -113,14 +122,63 @@ export function OnboardingForm({
         ) : null}
       </FormControl>
 
-      <View className="gap-2">
+      <FormControl isInvalid={Boolean(gradeError)} className="gap-2">
         <AppText variant="label">Quelle est ta classe ?</AppText>
         <ClassSelector
           grades={grades}
           selectedGrade={selectedGrade}
           onSelect={onSelectGrade}
         />
-      </View>
+        {gradeError ? (
+          <FormControlError>
+            <FormControlErrorText className="text-xs font-semibold text-[#B53434]">
+              {gradeError}
+            </FormControlErrorText>
+          </FormControlError>
+        ) : null}
+      </FormControl>
+
+      <FormControl className="gap-2">
+        <FormControlLabel>
+          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
+            Série
+          </FormControlLabelText>
+        </FormControlLabel>
+        <Input size="xl" variant="outline" className="h-[52px] rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
+          <InputSlot className="pr-2">
+            <FontAwesome5 name="stream" size={18} color={colors.textSecondary} />
+          </InputSlot>
+          <InputField
+            accessibilityLabel="Série"
+            value={series}
+            onChangeText={onChangeSeries}
+            placeholder="Scientifique, littéraire..."
+            placeholderTextColor={colors.textMuted}
+            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
+          />
+        </Input>
+      </FormControl>
+
+      <FormControl className="gap-2">
+        <FormControlLabel>
+          <FormControlLabelText className="text-[17px] font-bold leading-6 text-[#2F241F]">
+            Établissement
+          </FormControlLabelText>
+        </FormControlLabel>
+        <Input size="xl" variant="outline" className="h-[52px] rounded-2xl border border-[#E8D9C7] bg-[#FFFDF8] px-4">
+          <InputSlot className="pr-2">
+            <FontAwesome5 name="school" size={18} color={colors.textSecondary} />
+          </InputSlot>
+          <InputField
+            accessibilityLabel="Établissement"
+            value={schoolName}
+            onChangeText={onChangeSchoolName}
+            placeholder="Facultatif"
+            placeholderTextColor={colors.textMuted}
+            className="px-0 text-[17px] font-bold leading-6 text-[#2F241F]"
+          />
+        </Input>
+      </FormControl>
     </View>
   );
 }

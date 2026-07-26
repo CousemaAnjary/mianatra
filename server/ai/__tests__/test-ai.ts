@@ -130,14 +130,15 @@ async function main() {
   transport.generateResponse = { text: "  ", finishReason: null, tokenUsage: null };
   await assert.rejects(() => provider.generateText({ prompt: "hello" }, { requestId: "empty" }), AIInvalidResponseError, "réponse vide rejetée");
   transport.generateResponse = { text: "image ok", finishReason: "STOP", tokenUsage: null };
-  assert.equal((await provider.generateFromImage({ prompt: "describe", imageBase64: "abc", mimeType: "image/jpeg" })).text, "image ok", "génération image valide");
+  const sensitiveImagePayload = "sensitive-image-payload-for-log-test";
+  assert.equal((await provider.generateFromImage({ prompt: "describe", imageBase64: sensitiveImagePayload, mimeType: "image/jpeg" })).text, "image ok", "génération image valide");
   assert.equal(transport.generateCalls.at(-1)?.model, "gemma-4-26b-a4b-it", "modèle configuré transmis au transport");
   await assert.rejects(() => provider.generateFromImage({ prompt: "describe", imageBase64: "", mimeType: "image/png" }), z.ZodError, "base64 vide rejeté");
   await assert.rejects(
     () =>
       provider.generateFromImage({
         prompt: "describe",
-        imageBase64: "abc",
+        imageBase64: sensitiveImagePayload,
         mimeType: "image/gif" as "image/png",
       }),
     z.ZodError,
@@ -170,7 +171,7 @@ async function main() {
   await assert.rejects(() => service.generateStructured({ prompt: "json" }, z.object({ missing: z.boolean() })), AISchemaValidationError, "propriété absente rejetée");
 
   assert.equal(logs.some((event) => JSON.stringify(event).includes("fake-key")), false, "aucune clé dans les logs");
-  assert.equal(logs.some((event) => JSON.stringify(event).includes("abc")), false, "aucun base64 dans les logs");
+  assert.equal(logs.some((event) => JSON.stringify(event).includes(sensitiveImagePayload)), false, "aucun base64 dans les logs");
   assert.equal(logs.some((event) => JSON.stringify(event).includes("hello")), false, "aucun prompt dans les logs");
   assert.equal(transport.generateCalls.length > 0, true, "aucune vraie requête Gemini effectuée");
 
