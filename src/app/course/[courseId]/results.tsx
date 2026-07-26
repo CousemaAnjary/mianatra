@@ -102,7 +102,9 @@ export default function CourseResultsScreen() {
               value={results.progress}
               accessibilityLabel={`Progression du chapitre : ${results.progress} pour cent`}
             />
-            <AppText tone="secondary">{results.progress} % de progression de démonstration.</AppText>
+            <AppText tone="secondary">
+              {isDemoCourse ? `${results.progress} % de progression de démonstration.` : `${results.progress} % de progression.`}
+            </AppText>
           </View>
         </View>
       </AppCard>

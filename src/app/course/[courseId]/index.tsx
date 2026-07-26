@@ -15,7 +15,7 @@ import {
   CourseSummary,
   CourseTopBar,
 } from "@/src/features/courses/components";
-import { buildRealCourseResults, isExplicitDemoId, resolveExerciseSessionTarget } from "@/src/features/courses";
+import { buildRealCourseResults, emptyCourseResultCounters, isExplicitDemoId, resolveExerciseSessionTarget } from "@/src/features/courses";
 import { useCourseProcessing } from "@/src/features/course-processing";
 import { countRealCourseExercises, startRealCourseSession } from "@/src/features/study-session/services/real-session-view.service";
 import { demoCourseResults, demoCourses, demoSession } from "@/src/data/demo-data";
@@ -182,6 +182,7 @@ export default function CourseDetailScreen() {
   }
 
   const summaryItems = course.summary ?? [];
+  const progressCounters = realResults?.counters ?? (isDemoCourse ? demoCourseResults.counters : emptyCourseResultCounters);
 
   function showOptions() {
     Alert.alert(
@@ -212,9 +213,9 @@ export default function CourseDetailScreen() {
 
       <CourseProgressCard
         progress={course.progress}
-        mastered={realResults?.counters.mastered ?? demoCourseResults.counters.mastered}
-        progressing={realResults?.counters.progressing ?? demoCourseResults.counters.progressing}
-        needsWork={realResults?.counters.needsWork ?? demoCourseResults.counters.needsWork}
+        mastered={progressCounters.mastered}
+        progressing={progressCounters.progressing}
+        needsWork={progressCounters.needsWork}
       />
 
       <CourseActionTabs
