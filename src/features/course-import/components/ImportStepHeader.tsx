@@ -5,10 +5,11 @@ import { AppText } from "@/src/components/shared";
 import { colors } from "@/src/theme";
 
 type ImportStepHeaderProps = {
+  currentStep?: 1 | 2 | 3;
   onOptionsPress: () => void;
 };
 
-export function ImportStepHeader({ onOptionsPress }: ImportStepHeaderProps) {
+export function ImportStepHeader({ currentStep = 2, onOptionsPress }: ImportStepHeaderProps) {
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-3">
@@ -33,12 +34,15 @@ export function ImportStepHeader({ onOptionsPress }: ImportStepHeaderProps) {
         </Pressable>
       </View>
       <AppText variant="subtitle" tone="secondary" className="text-center">
-        Étape 2 sur 3
+        Étape {currentStep} sur 3
       </AppText>
-      <View accessibilityLabel="Progression d'import : étape 2 sur 3" className="flex-row justify-center gap-2">
-        <View className="h-2 w-[86px] rounded-full bg-[#D94B24]" />
-        <View className="h-2 w-[86px] rounded-full bg-[#D94B24]" />
-        <View className="h-2 w-[86px] rounded-full bg-[#FAF1E2]" />
+      <View accessibilityLabel={`Progression d'import : étape ${currentStep} sur 3`} className="flex-row justify-center gap-2">
+        {[1, 2, 3].map((step) => (
+          <View
+            key={step}
+            className={["h-2 w-[86px] rounded-full", step <= currentStep ? "bg-[#D94B24]" : "bg-[#FAF1E2]"].join(" ")}
+          />
+        ))}
       </View>
     </View>
   );
