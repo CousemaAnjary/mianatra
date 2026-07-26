@@ -1,27 +1,27 @@
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { CourseCard, GradeFilter, type GradeFilterValue } from "@/src/components/core";
+import { GradeFilter, SubjectCard, type GradeFilterValue } from "@/src/components/core";
 import { AppButton, AppCard, AppScreen, AppText, ScreenHeader } from "@/src/components/shared";
-import { useCoursesList } from "@/src/features/courses/hooks/use-courses-list";
+import { useSubjectsOverview } from "@/src/features/subjects/hooks/use-subjects-overview";
 
 export default function CoursesScreen() {
-  const { errorMessage, grades, items, reload, status } = useCoursesList();
+  const { errorMessage, grades, items, reload, status } = useSubjectsOverview();
   const [selectedFilter, setSelectedFilter] = useState<GradeFilterValue>("Tous");
   const filterValues: GradeFilterValue[] = grades;
   const effectiveSelectedFilter = filterValues.includes(selectedFilter) ? selectedFilter : "Tous";
-  const filteredCourses = useMemo(
+  const filteredSubjects = useMemo(
     () =>
       effectiveSelectedFilter === "Tous"
         ? items
-        : items.filter((course) => course.grade === effectiveSelectedFilter),
+        : items.filter((subject) => subject.grades.includes(effectiveSelectedFilter)),
     [effectiveSelectedFilter, items],
   );
 
-  function openCourse(courseId: string) {
+  function openSubject(subjectId: string) {
     router.push({
-      pathname: "/course/[courseId]",
-      params: { courseId },
+      pathname: "/subject/[subjectId]",
+      params: { subjectId },
     });
   }
 
@@ -58,32 +58,27 @@ export default function CoursesScreen() {
           </AppCard>
         ) : null}
 
-        {status === "ready" && items.length > 0 && filteredCourses.length === 0 ? (
+        {status === "ready" && items.length > 0 && filteredSubjects.length === 0 ? (
           <AppCard className="gap-3">
             <AppText variant="subtitle">Aucun cours pour ce filtre.</AppText>
             <AppText tone="secondary">Choisis une autre classe ou ajoute un nouveau cours.</AppText>
           </AppCard>
         ) : null}
 
-        {status === "ready" && filteredCourses.length > 0 ? (
-          filteredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={{
-                id: course.id,
-                title: course.title,
-                subject: course.subject,
-                grade: course.grade,
-                pageCount: course.pageCount,
-                progress: course.progress,
-                iconName: course.iconName,
-                color: course.subjectColor,
-                focusText:
-                  course.masteredCount + course.progressingCount + course.needsWorkCount > 0
-                    ? `${course.masteredCount} maîtrisé(s) • ${course.progressingCount} en progression • ${course.needsWorkCount} à renforcer`
-                    : null,
+        {status === "ready" && filteredSubjects.length > 0 ? (
+          filteredSubjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={{
+                id: subject.id,
+                name: subject.name,
+                chapterCount: subject.chapterCount,
+                progress: subject.progress,
+                iconName: subject.iconName,
+                color: subject.color,
+                mainWeakness: subject.mainWeakness,
               }}
-              onPress={() => openCourse(course.id)}
+              onPress={() => openSubject(subject.id)}
             />
           ))
         ) : null}

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import type { Course, Exercise, StudySession, UserProfile } from "../src/db";
-import type { CourseListItem } from "../src/features/courses";
 import { createHomeDashboardService } from "../src/features/home/services/home-dashboard.service";
+import type { SubjectOverviewItem } from "../src/features/subjects";
 
 const now = "2026-07-25T00:00:00.000Z";
 
@@ -37,21 +37,21 @@ function course(input: Partial<Course> = {}): Course {
   };
 }
 
-function item(input: Partial<CourseListItem> = {}): CourseListItem {
+function subjectItem(input: Partial<SubjectOverviewItem> = {}): SubjectOverviewItem {
   return {
-    id: "course-1",
-    title: "Fonctions",
-    subject: "Mathématiques",
-    subjectColor: "#2E7D70",
+    id: "subject-1",
+    name: "Mathématiques",
+    color: "#2E7D70",
     iconName: "square-root-alt",
-    grade: "2nde",
-    pageCount: 1,
+    chapterCount: 1,
     progress: 0,
     masteredCount: 0,
     progressingCount: 0,
     needsWorkCount: 0,
-    status: "ready",
+    mainWeakness: null,
+    lastReviewedAt: null,
     updatedAt: now,
+    grades: ["2nde"],
     ...input,
   };
 }
@@ -92,21 +92,21 @@ function exercise(input: Partial<Exercise> = {}): Exercise {
 function harness(input: {
   userProfile?: UserProfile;
   courses?: Course[];
-  courseItems?: CourseListItem[];
+  subjectItems?: SubjectOverviewItem[];
   sessions?: StudySession[];
   exercises?: Exercise[];
 } = {}) {
   const userProfile = input.userProfile ?? profile();
   const courses = input.courses ?? [course()];
-  const courseItems = input.courseItems ?? [item()];
+  const subjectItems = input.subjectItems ?? [subjectItem()];
   const sessions = input.sessions ?? [];
   const exercises = input.exercises ?? [exercise()];
   return createHomeDashboardService({
     profile: {
       getProfile: async () => userProfile,
     },
-    coursesList: {
-      loadCoursesList: async () => courseItems,
+    subjectsOverview: {
+      loadSubjectOverviews: async () => subjectItems,
     },
     courses: {
       findById: async (id) => courses.find((row) => row.id === id) ?? null,
@@ -124,8 +124,8 @@ function read(relativePath: string) {
   return fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
 
-function routeForCourse(courseId: string) {
-  return { pathname: "/course/[courseId]", params: { courseId } };
+function routeForSubject(subjectId: string) {
+  return { pathname: "/subject/[subjectId]", params: { subjectId } };
 }
 
 function routeForSession(sessionId: string) {
@@ -133,32 +133,31 @@ function routeForSession(sessionId: string) {
 }
 
 async function main() {
-  const empty = await harness({ courseItems: [], courses: [], sessions: [] }).loadHomeDashboard();
+  const empty = await harness({ subjectItems: [], courses: [], sessions: [] }).loadHomeDashboard();
   assert.equal(empty.displayName, "Aina", "profil réel chargé");
   assert.equal(empty.displayName, "Aina", "nom réel affichable");
-  assert.deepEqual(empty.recentCourses, [], "zéro cours représenté");
+  assert.deepEqual(empty.recentSubjects, [], "zéro matière représentée");
   assert.equal(empty.activeSession, null, "aucune session -> section masquée");
 
   const moreThanThree = [
-    item({ id: "course-new", title: "Nouveau", updatedAt: "2026-07-25T10:00:00.000Z", progress: 0 }),
-    item({ id: "course-mid", title: "Milieu", updatedAt: "2026-07-25T09:00:00.000Z", progress: 42 }),
-    item({ id: "course-old", title: "Ancien", updatedAt: "2026-07-25T08:00:00.000Z" }),
-    item({ id: "course-extra", title: "Extra", updatedAt: "2026-07-25T07:00:00.000Z" }),
+    subjectItem({ id: "subject-new", name: "SVT", updatedAt: "2026-07-25T10:00:00.000Z", progress: 0 }),
+    subjectItem({ id: "subject-mid", name: "Maths", updatedAt: "2026-07-25T09:00:00.000Z", progress: 42 }),
+    subjectItem({ id: "subject-old", name: "Histoire", updatedAt: "2026-07-25T08:00:00.000Z" }),
+    subjectItem({ id: "subject-extra", name: "Physique", updatedAt: "2026-07-25T07:00:00.000Z" }),
   ];
   const dashboard = await harness({
-    courseItems: moreThanThree,
-    courses: moreThanThree.map((courseItem) => course({ id: courseItem.id, title: courseItem.title, updatedAt: courseItem.updatedAt })),
+    subjectItems: moreThanThree,
   }).loadHomeDashboard();
-  assert.deepEqual(dashboard.recentCourses.map((row) => row.id), ["course-new", "course-mid", "course-old"], "plus de trois cours -> seulement trois récents triés");
-  assert.equal(dashboard.recentCourses[0].progress, 0, "progression absente -> 0%");
-  assert.equal(dashboard.recentCourses.some((row) => row.id === "course-extra"), false, "quatrième cours masqué");
-  assert.equal(dashboard.recentCourses.some((row) => row.status === "draft" || row.status === "processing" || row.status === "ready"), true, "statuts réels conservés");
+  assert.deepEqual(dashboard.recentSubjects.map((row) => row.id), ["subject-new", "subject-mid", "subject-old"], "plus de trois matières -> seulement trois récentes triées");
+  assert.equal(dashboard.recentSubjects[0].progress, 0, "progression absente -> 0%");
+  assert.equal(dashboard.recentSubjects.some((row) => row.id === "subject-extra"), false, "quatrième matière masquée");
+  assert.equal(dashboard.recentSubjects[1].chapterCount, 1, "nombre de chapitres conservé");
 
   const archivedNotReturned = await harness({
-    courseItems: [item({ id: "real-course" })],
+    subjectItems: [subjectItem({ id: "subject-real" })],
     courses: [course({ id: "real-course" }), course({ id: "archived", status: "archived" })],
   }).loadHomeDashboard();
-  assert.equal(archivedNotReturned.recentCourses.some((row) => row.id === "archived"), false, "cours archivés absents");
+  assert.equal(archivedNotReturned.recentSubjects.some((row) => row.id === "archived"), false, "cours archivés absents des matières");
 
   const active = await harness({
     courses: [course({ id: "course-1", title: "SVT réelle" })],
@@ -178,14 +177,14 @@ async function main() {
   }).loadHomeDashboard();
   assert.equal(newestActive.activeSession?.id, "newer-session", "plusieurs sessions -> plus récente choisie");
 
-  assert.deepEqual(routeForCourse("sqlite-course-id"), { pathname: "/course/[courseId]", params: { courseId: "sqlite-course-id" } }, "navigation vers vrai courseId");
+  assert.deepEqual(routeForSubject("sqlite-subject-id"), { pathname: "/subject/[subjectId]", params: { subjectId: "sqlite-subject-id" } }, "navigation vers vrai subjectId");
   assert.deepEqual(routeForSession("sqlite-session-id"), { pathname: "/session/[sessionId]", params: { sessionId: "sqlite-session-id" } }, "navigation vers vrai sessionId");
 
   await assert.rejects(
     () =>
       createHomeDashboardService({
         profile: { getProfile: async () => Promise.reject(new Error("NO_PROFILE")) },
-        coursesList: { loadCoursesList: async () => [] },
+        subjectsOverview: { loadSubjectOverviews: async () => [] },
         courses: { findById: async () => null },
         exercises: { findAllByCourse: async () => [] },
         sessions: { findActive: async () => [] },

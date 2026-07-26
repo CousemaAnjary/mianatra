@@ -8,6 +8,7 @@ import { createOnboardingProfileService } from "../src/features/profile/services
 import { createCoursesListViewService } from "../src/features/courses/services/courses-list-view.service";
 import { createHomeDashboardService } from "../src/features/home/services/home-dashboard.service";
 import { createProfileViewService } from "../src/features/profile/services/profile-view.service";
+import { createSubjectOverviewService } from "../src/features/subjects";
 import { buildRealCourseResults, isExplicitDemoId, resolveExerciseSessionTarget } from "../src/features/courses";
 
 const now = "2026-07-26T00:00:00.000Z";
@@ -150,16 +151,31 @@ async function main() {
   const courseItems = await courseListService.loadCoursesList();
   assert.deepEqual(courseItems.map((item) => item.id), ["new-course", "old-course"], "cours créé visible dans Mes cours, archivé absent");
   assert.equal((await courseListService.loadCoursesList()).some((item) => item.id === "new-course"), true, "cours toujours visible après rechargement simulé");
+  const subjectOverviewService = createSubjectOverviewService({
+    subjects: {
+      findAll: async () => [subject()],
+      findById: async (id) => (id === "subject-1" ? subject() : null),
+    },
+    courses: {
+      findAll: async () => courses,
+      findAllBySubject: async (subjectId) => courses.filter((row) => row.subjectId === subjectId),
+      findDetailById: async (id) => {
+        const found = courses.find((row) => row.id === id);
+        return found ? detail({ sourceCourse: found, progressRows: [] }) : null;
+      },
+    },
+  });
+  const subjectItems = await subjectOverviewService.loadSubjectOverviews();
 
   const home = await createHomeDashboardService({
     profile: { getProfile: async () => storedProfile },
-    coursesList: { loadCoursesList: async () => courseItems },
+    subjectsOverview: { loadSubjectOverviews: async () => subjectItems },
     courses: { findById: async (id) => courses.find((row) => row.id === id) ?? null },
     exercises: { findAllByCourse: async (courseId) => [exercise({ courseId })] },
     sessions: { findActive: async () => [session({ id: "active-session", courseId: "new-course" })] },
   }).loadHomeDashboard();
   assert.equal(home.displayName, "Noro", "Accueil utilise le profil réel");
-  assert.equal(home.recentCourses[0]?.id, "new-course", "cours créé visible dans Accueil");
+  assert.equal(home.recentSubjects[0]?.id, "subject-1", "matière du cours créé visible dans Accueil");
   assert.equal(home.activeSession?.id, "active-session", "vraie session active visible sur l'accueil");
 
   const emptyProfileStats = await createProfileViewService({
@@ -190,7 +206,7 @@ async function main() {
     () =>
       createHomeDashboardService({
         profile: { getProfile: async () => Promise.reject(new Error("DB_FAIL")) },
-        coursesList: { loadCoursesList: async () => [] },
+        subjectsOverview: { loadSubjectOverviews: async () => [] },
         courses: { findById: async () => null },
         exercises: { findAllByCourse: async () => [] },
         sessions: { findActive: async () => [] },

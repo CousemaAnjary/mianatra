@@ -1,13 +1,11 @@
-export type HomeDashboardCourse = {
+export type HomeDashboardSubject = {
   id: string;
-  title: string;
-  subject: string;
-  subjectColor: string | null;
+  name: string;
+  color: string | null;
   iconName: string | null;
-  grade: string;
-  pageCount: number;
+  chapterCount: number;
   progress: number;
-  status: "draft" | "processing" | "ready";
+  mainWeakness: string | null;
   updatedAt: string;
 };
 
@@ -21,6 +19,6 @@ export type HomeDashboardActiveSession = {
 
 export type HomeDashboard = {
   displayName: string;
-  recentCourses: HomeDashboardCourse[];
+  recentSubjects: HomeDashboardSubject[];
   activeSession: HomeDashboardActiveSession | null;
 };

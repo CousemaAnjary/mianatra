@@ -1,7 +1,7 @@
 import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { CourseCard } from "@/src/components/core";
+import { SubjectCard } from "@/src/components/core";
 import {
   AppButton,
   AppCard,
@@ -12,10 +12,10 @@ import {
 import { useHomeDashboard } from "@/src/features/home/hooks/use-home-dashboard";
 import { colors } from "@/src/theme";
 
-function openCourse(courseId: string) {
+function openSubject(subjectId: string) {
   router.push({
-    pathname: "/course/[courseId]",
-    params: { courseId },
+    pathname: "/subject/[subjectId]",
+    params: { subjectId },
   });
 }
 
@@ -99,7 +99,7 @@ export default function HomeScreen() {
       ) : null}
 
       <View className="flex-row items-center justify-between gap-3">
-        <AppText variant="heading">Cours récents</AppText>
+        <AppText variant="heading">Mes cours</AppText>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Voir tous mes cours"
@@ -113,22 +113,20 @@ export default function HomeScreen() {
       </View>
 
       <View className="gap-3">
-        {dashboard.recentCourses.length > 0 ? (
-          dashboard.recentCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={{
-                id: course.id,
-                title: course.title,
-                subject: course.subject,
-                grade: course.grade,
-                pageCount: course.pageCount,
-                progress: course.progress,
-                iconName: course.iconName,
-                color: course.subjectColor,
-                focusText: course.progress > 0 ? `${course.progress}% de progression` : null,
+        {dashboard.recentSubjects.length > 0 ? (
+          dashboard.recentSubjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={{
+                id: subject.id,
+                name: subject.name,
+                chapterCount: subject.chapterCount,
+                progress: subject.progress,
+                iconName: subject.iconName,
+                color: subject.color,
+                mainWeakness: subject.mainWeakness,
               }}
-              onPress={() => openCourse(course.id)}
+              onPress={() => openSubject(subject.id)}
             />
           ))
         ) : (

@@ -1,15 +1,15 @@
 import type { Course, Exercise, StudySession, UserProfile } from "@/src/db";
 import { ProfileNotFoundError } from "@/src/features/shared";
-import type { CourseListItem } from "@/src/features/courses";
-import { loadCoursesList } from "@/src/features/courses/services/courses-list-view.service";
-import type { HomeDashboard, HomeDashboardActiveSession, HomeDashboardCourse } from "../types/home-dashboard.types";
+import type { SubjectOverviewItem } from "@/src/features/subjects";
+import { loadSubjectOverviews } from "@/src/features/subjects";
+import type { HomeDashboard, HomeDashboardActiveSession, HomeDashboardSubject } from "../types/home-dashboard.types";
 
 type HomeDashboardDeps = {
   profile: {
     getProfile: () => Promise<UserProfile>;
   };
-  coursesList: {
-    loadCoursesList: () => Promise<CourseListItem[]>;
+  subjectsOverview: {
+    loadSubjectOverviews: () => Promise<SubjectOverviewItem[]>;
   };
   courses: {
     findById: (id: string) => Promise<Course | null>;
@@ -22,17 +22,15 @@ type HomeDashboardDeps = {
   };
 };
 
-function toHomeCourse(item: CourseListItem): HomeDashboardCourse {
+function toHomeSubject(item: SubjectOverviewItem): HomeDashboardSubject {
   return {
     id: item.id,
-    title: item.title,
-    subject: item.subject,
-    subjectColor: item.subjectColor,
+    name: item.name,
+    color: item.color,
     iconName: item.iconName,
-    grade: item.grade,
-    pageCount: item.pageCount,
+    chapterCount: item.chapterCount,
     progress: item.progress,
-    status: item.status,
+    mainWeakness: item.mainWeakness,
     updatedAt: item.updatedAt,
   };
 }
@@ -67,7 +65,7 @@ export function createHomeDashboardService(dependencies: HomeDashboardDeps) {
         throw new ProfileNotFoundError();
       }
 
-      const courses = await dependencies.coursesList.loadCoursesList();
+      const subjects = await dependencies.subjectsOverview.loadSubjectOverviews();
       const activeSessions = (await dependencies.sessions.findActive()).sort((left, right) =>
         sessionDate(right).localeCompare(sessionDate(left)),
       );
@@ -81,7 +79,7 @@ export function createHomeDashboardService(dependencies: HomeDashboardDeps) {
 
       return {
         displayName: profile.displayName,
-        recentCourses: courses.slice(0, 3).map(toHomeCourse),
+        recentSubjects: subjects.slice(0, 3).map(toHomeSubject),
         activeSession,
       };
     },
@@ -93,7 +91,7 @@ export async function loadHomeDashboard() {
   const { getProfile } = await import("@/src/features/profile");
   return createHomeDashboardService({
     profile: { getProfile },
-    coursesList: { loadCoursesList },
+    subjectsOverview: { loadSubjectOverviews },
     courses: coursesRepository,
     exercises: exercisesRepository,
     sessions: studySessionsRepository,
