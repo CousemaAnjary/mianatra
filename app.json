@@ -7,9 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mianatra",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.beanjara.Mianatra",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,9 +20,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png",
         "backgroundColor": "#FFF7E8"
       },
-      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.beanjara.Mianatra"
     },
     "web": {
       "output": "static",
@@ -44,6 +47,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8ab42d94-2800-4f07-98ef-36d3e6b5d77c"
+      }
     }
   }
 }
